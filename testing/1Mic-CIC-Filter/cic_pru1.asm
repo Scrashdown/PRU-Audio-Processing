@@ -34,15 +34,24 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 
 // Register aliases
 #define IN_PINS r31
-#define SAMPLE_COUNTER r4
-#define WAIT_COUNTER r5
-#define TMP_REG r6
+#define SAMPLE_COUNTER r5
+#define WAIT_COUNTER r6
+#define TMP_REG r7
 
 #define INT0 r0
 #define INT1 r1
 #define INT2 r2
 #define INT3 r3
-// TODO: define more registers for comb stages
+#define LAST_INT r4
+
+// TODO: define more registers for comb stage
+#define COMB0 r10
+#define COMB1 r11
+#define COMB2 r12
+//#define COMB3 r13
+#define LAST_COMB0 r14
+#define LAST_COMB1 r15
+#define LAST_COMB2 r16
 
 .origin 0
 .entrypoint TOP
@@ -55,7 +64,14 @@ TOP:
     LDI     INT1, 0
     LDI     INT2, 0
     LDI     INT3, 0
-    // TODO: set comb stages to 0 too
+    LDI     COMB0, 0
+    LDI     COMB1, 0
+    LDI     COMB2, 0
+    LDI     COMB3, 0
+    LDI     LAST_INT, 0
+    LDI     LAST_COMB0, 0
+    LDI     LAST_COMB1, 0
+    LDI     LAST_COMB2, 0
 
 WAIT_EDGE:
     // First wait for CLK = 0
@@ -85,7 +101,20 @@ WAIT_SIGNAL:
     // Reset sample counter once we reach R
     LDI     SAMPLE_COUNTER, 0
 
-    // TODO: comb filter
+    // 4 stage comb filter
+    SUB     COMB0, INT3, LAST_INT
+    SUB     COMB1, COMB0, LAST_COMB0
+    SUB     COMB2, COMB1, LAST_COMB1
+    SUB     TMP_REG, COMB2, LAST_COMB2
+
+    // TODO: normalize level and output the result to memory
+
+    // Update LAST_INT value and LAST_COMBs
+    // TODO: check this is correct, and this could perhaps be done in fewer instructions
+    MOV     LAST_INT, INT3
+    MOV     LAST_COMB0, COMB0
+    MOV     LAST_COMB1, COMB1
+    MOV     LAST_COMB2, COMB2
 
     // Branch back to wait edge
     QBA     WAIT_EDGE
