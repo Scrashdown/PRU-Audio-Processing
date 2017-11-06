@@ -1,5 +1,9 @@
-# README
+# PRU-Audio-Processing
 
-The `am335x_pru_package` contains utils such as the `prussdrv` driver and the `pasm` compiler which are required for programming the PRUs in assembly using UIO.
+This is the repository of my bachelor's project.
 
-To install them on the board, run the `install-utils.sh` script I made, following these instructions : http://mythopoeic.org/bbb-pru-minimal/
+## Setup
+
+### PRUSS Driver (`prussdrv`)
+
+In order to install the PRUSS driver on the host side, first clone this [repo](https://github.com/beagleboard/am335x_pru_package) and then follow the "Development tools" section of these [instructions](http://mythopoeic.org/bbb-pru-minimal/).
