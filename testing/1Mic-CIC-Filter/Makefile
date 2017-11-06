@@ -8,18 +8,18 @@ clean:
 	rm gen/*
 
 # Assemble pru files and move them to the gen/ directory
-pru0_clk: clk_pru0.p prudefs.hp
+pru0_clk: clk_pru0.asm prudefs.hasm
 	@tput bold
 	@echo "\n----- Building PRU0 (CLK) Firmware -----"
 	@tput sgr0
-	$(PRU_CC) -b clk_pru0.p
+	$(PRU_CC) -b clk_pru0.asm
 	mv *.bin gen/
 
-pru1_cic: cic_pru1.p prudefs.hp
+pru1_cic: cic_pru1.asm prudefs.hasm
 	@tput bold
 	@echo "\n----- Building PRU1 (CIC) Firmware -----"
 	@tput sgr0
-	$(PRU_CC) -b cic_pru1.p
+	$(PRU_CC) -b cic_pru1.asm
 	mv *.bin gen/
 
 # Build the loader program
