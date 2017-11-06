@@ -23,10 +23,7 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 
 */
 
-.origin 0
-.entrypoint TOP
-
-#include "prudefs.hp"
+#include "prudefs.hasm"
 
 // TODO: Figure out how interrupts work
 #define PRU1_ARM_INTERRUPT 20
@@ -46,6 +43,9 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define INT2 r2
 #define INT3 r3
 // TODO: define more registers for comb stages
+
+.origin 0
+.entrypoint TOP
 
 TOP:
     // Setup counters to 0 at first
@@ -71,6 +71,7 @@ WAIT_SIGNAL:
 
     // Retrieve data from DATA pin (only one bit!)
     AND     TMP_REG, IN_PINS, 1 << DATA_OFFSET
+    LSR     TMP_REG, TMP_REG, DATA_OFFSET
     // Do the integrator operations
     ADD     SAMPLE_COUNTER, SAMPLE_COUNTER, 1
     ADD     INT0, INT0, TMP_REG
