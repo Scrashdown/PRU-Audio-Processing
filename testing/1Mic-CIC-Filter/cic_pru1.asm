@@ -67,7 +67,7 @@ TOP:
     LDI     COMB0, 0
     LDI     COMB1, 0
     LDI     COMB2, 0
-    LDI     COMB3, 0
+    //LDI     COMB3, 0
     LDI     LAST_INT, 0
     LDI     LAST_COMB0, 0
     LDI     LAST_COMB1, 0
