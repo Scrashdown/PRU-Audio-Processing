@@ -90,6 +90,7 @@ int main(int argc, char **argv) {
     volatile void * HOST_mem = NULL;
     unsigned int HOST_mem_len = 0;
     unsigned int HOST_mem_phys_addr = 0;
+    // Setup memory maps and pass the physical address and length of the host's memory to the PRU
     int ret_setup = setup_mmaps(&PRU_mem, &HOST_mem, &HOST_mem_len, &HOST_mem_phys_addr);
     if (ret_setup != 0) {
         stop();
