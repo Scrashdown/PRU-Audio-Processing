@@ -2,7 +2,7 @@
 .origin 0
 .entrypoint TOP
 
-#include "prudefs.hp"
+#include "prudefs.hasm"
 
 // TODO: find a more intuitive way to bind the number of cycles to the sample rate
 // XXX: 39 cycles gives us a nice sample rate
