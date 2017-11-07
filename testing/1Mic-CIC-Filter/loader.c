@@ -16,6 +16,51 @@
 #define PRU_NUM0 0
 #define PRU_NUM1 1
 
+
+int setup_mmaps(volatile uint32_t * pru_mem, volatile void * host_mem, unsigned int * host_mem_len, unsigned int * host_mem_phys_addr) {
+    // Pointer into the PRU1 local data RAM, we use it to send to the PRU the host's memory physical address and length
+    volatile void * PRU_mem_void = NULL;
+    // For now, store data in 32 bits chunks
+    volatile uint32_t * PRU_mem = NULL;
+    int ret = prussdrv_map_prumem(PRUSS0_PRU1_DATARAM, (void **) &PRU_mem_void);
+    if (ret != 0) {
+        return ret;
+    }
+    PRU_mem = (uint32_t *) PRU_mem_void;
+
+    // Pointer into the DDR RAM mapped by the uio_pruss kernel module, it is possible to change the amount of memory mapped by uio_pruss by reloading it with an argument (still have to find out how)
+    volatile void * HOST_mem = NULL;
+    ret = prussdrv_map_extmem((void **) &HOST_mem);
+    if (ret != 0) {
+        return ret;
+    }
+    unsigned int HOST_mem_len = prussdrv_extmem_size();
+    // The PRU needs the physical address of the memory it will write to
+    unsigned int HOST_mem_phys_addr = prussdrv_get_phys_addr((void *) HOST_mem);
+
+    printf("%u bytes of shared DDR available.\n Physical (PRU-side) address:%x\n", HOST_mem_len, HOST_mem_phys_addr);
+    printf("Virtual (linux-side) address: %p\n\n", HOST_mem);
+
+    // Use the first 8 bytes of PRU memory to tell it where the shared segment of Host memory is
+    PRU_mem[0] = HOST_mem_phys_addr;
+    PRU_mem[1] = HOST_mem_len;
+
+    *pru_mem = PRU_mem;
+    *host_mem = HOST_mem;
+    *host_mem_len = HOST_mem_len;
+    *host_mem_phys_addr = HOST_mem_phys_addr;
+
+    return 0;
+}
+
+
+void stop(void) {
+    prussdrv_pru_disable(PRU_NUM0);
+    prussdrv_pru_disable(PRU_NUM1);
+    prussdrv_exit();
+}
+
+
 int main(int argc, char **argv) {
     if (argc != 3) {
         printf("Usage: %s pru0.bin pru1.bin\n", argv[0]);
@@ -39,7 +84,20 @@ int main(int argc, char **argv) {
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
     prussdrv_pruintc_init(&pruss_intc_initdata);
 
-    // TODO : memory management
+    // 
+    volatile uint32_t PRU_mem = NULL;
+    volatile void HOST_mem = NULL;
+    unsigned int HOST_mem_len = NULL;
+    unsigned int HOST_mem_phys_addr = NULL;
+    int ret = setup_mmaps(&PRU_mem, &HOST_mem, &HOST_mem_len, &HOST_mem_phys_addr);
+    if (ret != 0) {
+        stop();
+        return -1;
+    }
+    
+    printf("%u bytes of shared DDR available.\n Physical (PRU-side) address:%x\n",
+    HOST_mem_len, HOST_mem_phys_addr);
+    printf("Virtual (linux-side) address: %p\n\n", HOST_mem);
 
     // Load the two PRU programs
     printf("Loading \"%s\" program on PRU0\n", argv[1]);
@@ -66,9 +124,7 @@ int main(int argc, char **argv) {
     printf("PRU1 program terminated\n");
 
     // Disable PRUs and the pruss driver
-    prussdrv_pru_disable(PRU_NUM0);
-    prussdrv_pru_disable(PRU_NUM1);
-    prussdrv_exit();
+    stop();
 
     return 0;
 }
