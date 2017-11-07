@@ -38,13 +38,18 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define WAIT_COUNTER r6
 #define TMP_REG r7
 
+#define HOST_MEM r20
+#define HOST_MEM_SIZE r21
+#define LOCAL_MEM r22
+// Defined in page 19 of the AM335x PRU-ICSS Reference guide
+#define LOCAL_MEM_ADDR 0x2000
+
 #define INT0 r0
 #define INT1 r1
 #define INT2 r2
 #define INT3 r3
 #define LAST_INT r4
 
-// TODO: define more registers for comb stage
 #define COMB0 r10
 #define COMB1 r11
 #define COMB2 r12
@@ -57,6 +62,20 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 .entrypoint TOP
 
 TOP:
+    // ### Memory management ###
+    // Enable OCP master ports in SYSCFG register
+    // It is okay to use the r0 register here (which we use later too) because it merely serves as a mean to temporary hold the value of C4 + 4, the OCP masters are enabled by writing the correct data to C4
+    LBCO    r0, C4, 4, 4
+    CLR     r0, r0, 4
+    SBCO    r0, C4, 4, 4
+    // Load the local memory address in a register
+    MOV     LOCAL_MEM, LOCAL_MEM_ADDR
+    // From local memory, grab the address of the host memory (passed by the host before this program started)
+    LBBO    HOST_MEM, LOCAL_MEM, 0, 4
+    // Likewise, grab the host memory length
+    LBBO    HOST_MEM_SIZE, LOCAL_MEM, 4, 4
+
+    // ### Set up start configuration ###
     // Setup counters to 0 at first
     LDI     SAMPLE_COUNTER, 0
     // Set all integrator and comb registers to 0 at first
@@ -73,6 +92,7 @@ TOP:
     LDI     LAST_COMB1, 0
     LDI     LAST_COMB2, 0
 
+    // ### Signal processing ###
 WAIT_EDGE:
     // First wait for CLK = 0
     WBC     IN_PINS, CLK_OFFSET
