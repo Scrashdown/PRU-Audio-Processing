@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <pruss/prussdrv.h>
 #include <pruss/pruss_intc_mapping.h>
 
@@ -17,7 +18,7 @@
 #define PRU_NUM1 1
 
 
-int setup_mmaps(volatile uint32_t * pru_mem, volatile void * host_mem, unsigned int * host_mem_len, unsigned int * host_mem_phys_addr) {
+int setup_mmaps(volatile uint32_t ** pru_mem, volatile void ** host_mem, unsigned int * host_mem_len, unsigned int * host_mem_phys_addr) {
     // Pointer into the PRU1 local data RAM, we use it to send to the PRU the host's memory physical address and length
     volatile void * PRU_mem_void = NULL;
     // For now, store data in 32 bits chunks
@@ -85,12 +86,12 @@ int main(int argc, char **argv) {
     prussdrv_pruintc_init(&pruss_intc_initdata);
 
     // 
-    volatile uint32_t PRU_mem = NULL;
-    volatile void HOST_mem = NULL;
-    unsigned int HOST_mem_len = NULL;
-    unsigned int HOST_mem_phys_addr = NULL;
-    int ret = setup_mmaps(&PRU_mem, &HOST_mem, &HOST_mem_len, &HOST_mem_phys_addr);
-    if (ret != 0) {
+    volatile uint32_t * PRU_mem = NULL;
+    volatile void * HOST_mem = NULL;
+    unsigned int HOST_mem_len = 0;
+    unsigned int HOST_mem_phys_addr = 0;
+    int ret_setup = setup_mmaps(&PRU_mem, &HOST_mem, &HOST_mem_len, &HOST_mem_phys_addr);
+    if (ret_setup != 0) {
         stop();
         return -1;
     }
