@@ -39,8 +39,9 @@ int setup_mmaps(volatile uint32_t ** pru_mem, volatile void ** host_mem, unsigne
     // The PRU needs the physical address of the memory it will write to
     unsigned int HOST_mem_phys_addr = prussdrv_get_phys_addr((void *) HOST_mem);
 
-    printf("%u bytes of shared DDR available.\n Physical (PRU-side) address:%x\n", HOST_mem_len, HOST_mem_phys_addr);
-    printf("Virtual (linux-side) address: %p\n\n", HOST_mem);
+    printf("%u bytes of Host memory available.\n", HOST_mem_phys_addr);
+    printf("Physical (PRU-side) address: %x\n", HOST_mem_phys_addr);
+    printf("Virtual (Host-side) address: %p\n\n", HOST_mem);
 
     // Use the first 8 bytes of PRU memory to tell it where the shared segment of Host memory is
     PRU_mem[0] = HOST_mem_phys_addr;
