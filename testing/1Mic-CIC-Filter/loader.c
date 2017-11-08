@@ -72,7 +72,9 @@ void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_l
     int buffer_side = 0;
     for (int i = 0; i < 2 * buffer_passes; ++i) {
         // Wait for interrupt from PRU1
+        printf("Waiting for PRU interrupt...\n");
         prussdrv_pru_wait_event(PRU_EVTOUT_1);
+        prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
         // Initialize arguments for fwrite accordingly to the buffer we're writing to
         volatile void * ptr;
         if (buffer_side == 0) {
@@ -152,6 +154,7 @@ int main(int argc, char **argv) {
     	return ret;
     }
 
+    
     // Setup output files and any stuff required for properly reading the data output from the PRU
     FILE * output = fopen("output/out.wav", "w");
     // Once this is done, load the program
@@ -163,7 +166,7 @@ int main(int argc, char **argv) {
     }
     // Start processing on the received data
     processing(output, HOST_mem, HOST_mem_len);
-
+    
     /*
     // Wait for PRUs to terminate
     prussdrv_pru_wait_event(PRU_EVTOUT_0);
