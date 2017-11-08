@@ -10,8 +10,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include <prussdrv.h>
-#include <pruss_intc_mapping.h>
+#include <pruss/prussdrv.h>
+#include <pruss/pruss_intc_mapping.h>
 
 int main(int argc, char **argv) {
     if (argc != 2) {
