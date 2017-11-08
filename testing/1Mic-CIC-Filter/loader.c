@@ -10,9 +10,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <inttypes.h>
 #include <pruss/prussdrv.h>
 #include <pruss/pruss_intc_mapping.h>
+
+//#include "wav_utils.h"
 
 #define PRU_NUM0 0
 #define PRU_NUM1 1
@@ -42,7 +45,7 @@ int setup_mmaps(volatile uint32_t ** pru_mem, volatile void ** host_mem, unsigne
     // Trim HOST_mem_len down so that it is a multiple of 8. This will ensure that HOST_mem_len / 2 is a multiple of 4, which allows the PRU to check if it has reached half if the buffer by doing a simple equality check (4 because it is writing 4 B at a time)
     HOST_mem_len = (HOST_mem_len >> 3) << 3;
 
-    printf("%u bytes of Host memory available.\n", HOST_mem_phys_addr);
+    printf("%u bytes of Host memory available.\n", HOST_mem_len);
     printf("Physical (PRU-side) address: %x\n", HOST_mem_phys_addr);
     printf("Virtual (Host-side) address: %p\n\n", HOST_mem);
 
@@ -59,10 +62,50 @@ int setup_mmaps(volatile uint32_t ** pru_mem, volatile void ** host_mem, unsigne
 }
 
 
-void stop(void) {
+void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_len) {
+    // Make sure the size is indeed a multiple of 8
+    assert(host_mem_len % 8 == 0);
+
+    // Use this to limit the number of passes we do for now
+    const int buffer_passes = 10;
+    const size_t nmemb = (size_t) (host_mem_len / 2);
+    int buffer_side = 0;
+    for (int i = 0; i < 2 * buffer_passes; ++i) {
+        // Wait for interrupt from PRU1
+        prussdrv_pru_wait_event(PRU_EVTOUT_1);
+        // Initialize arguments for fwrite accordingly to the buffer we're writing to
+        volatile void * ptr;
+        if (buffer_side == 0) {
+            printf("Received interrupt for buffer side 0\n");
+            ptr = host_mem;
+            buffer_side = 1;
+        }
+        else {
+            printf("Received interrupt for buffer side 1\n");
+            ptr = host_mem + host_mem_len / 2;
+            buffer_side = 0;
+        }
+
+        // Write the data to the file from the buffer
+        // TODO: this should be done some other way since this is a wav file
+        /*
+        size_t nwritten = fwrite(host_mem + offset, 1, nmemb, output);
+        if (nwritten != nmemb) {
+            fprintf(stderr, "Error writing file!\n");
+        }
+        */
+    }
+}
+
+
+void stop(FILE * file) {
     prussdrv_pru_disable(PRU_NUM0);
     prussdrv_pru_disable(PRU_NUM1);
     prussdrv_exit();
+
+    if (file != NULL) {
+        fclose(file);
+    }
 }
 
 
@@ -97,13 +140,9 @@ int main(int argc, char **argv) {
     // Setup memory maps and pass the physical address and length of the host's memory to the PRU
     int ret_setup = setup_mmaps(&PRU_mem, &HOST_mem, &HOST_mem_len, &HOST_mem_phys_addr);
     if (ret_setup != 0) {
-        stop();
+        stop(NULL);
         return -1;
     }
-    
-    printf("%u bytes of shared DDR available.\n Physical (PRU-side) address:%x\n",
-    HOST_mem_len, HOST_mem_phys_addr);
-    printf("Virtual (linux-side) address: %p\n\n", HOST_mem);
 
     // Load the two PRU programs
     printf("Loading \"%s\" program on PRU0\n", argv[1]);
@@ -112,15 +151,20 @@ int main(int argc, char **argv) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
     	return ret;
     }
+
+    // Setup output files and any stuff required for properly reading the data output from the PRU
+    FILE * output = fopen("output/out.wav", "w");
+    // Once this is done, load the program
     printf("Loading \"%s\" program on PRU1\n", argv[2]);
     ret = prussdrv_exec_program(PRU_NUM1, argv[2]);
     if (ret) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[2]);
     	return ret;
     }
+    // Start processing on the received data
+    processing(output, HOST_mem, HOST_mem_len);
 
-    // TODO : do some checks or or processing on the received data
-
+    /*
     // Wait for PRUs to terminate
     prussdrv_pru_wait_event(PRU_EVTOUT_0);
     //prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
@@ -128,9 +172,10 @@ int main(int argc, char **argv) {
     prussdrv_pru_wait_event(PRU_EVTOUT_1);
     //prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
     printf("PRU1 program terminated\n");
+    */
 
-    // Disable PRUs and the pruss driver
-    stop();
+    // Disable PRUs and the pruss driver. Also close the opened file.
+    stop(output);
 
     return 0;
 }
