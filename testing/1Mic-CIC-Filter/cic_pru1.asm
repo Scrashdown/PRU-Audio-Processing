@@ -37,8 +37,10 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define SAMPLE_COUNTER r5
 #define WAIT_COUNTER r6
 #define TMP_REG r7
+#define BYTE_COUNTER r8
 
 #define HOST_MEM r20
+// Host mem size is multiple of 8, this is ensured on the host side
 #define HOST_MEM_SIZE r21
 #define LOCAL_MEM r22
 // Defined in page 19 of the AM335x PRU-ICSS Reference guide
@@ -78,6 +80,7 @@ TOP:
     // ### Set up start configuration ###
     // Setup counters to 0 at first
     LDI     SAMPLE_COUNTER, 0
+    LDI     BYTE_COUNTER, 0
     // Set all integrator and comb registers to 0 at first
     LDI     INT0, 0
     LDI     INT1, 0
@@ -127,8 +130,27 @@ WAIT_SIGNAL:
     SUB     COMB2, COMB1, LAST_COMB1
     SUB     TMP_REG, COMB2, LAST_COMB2
 
-    // TODO: normalize level and output the result to memory
+    // Output the result to memory
+    // We write one word (4 B) from TMP_REG to HOST_MEM with an offset of BYTE_COUNTER
+    SBBO    TMP_REG, HOST_MEM, BYTE_COUNTER, 4
+    // Increment the written bytes counter once the write operation is done
+    ADD     BYTE_COUNTER, BYTE_COUNTER, 4
+    // First, check if we are about to overrun the buffer, that is, if HOST_MEM_SIZE - BYTE_COUNTER < 4
+    // If yes, send an interrupt to the host, and reset the byte counter/offset back to 0
+    SUB     TMP_REG, HOST_MEM_SIZE, BYTE_COUNTER
+    QBGE    check_half, 4, TMP_REG  // Jump to "check_half" if HOST_MEM_SIZE - BYTE_COUNTER >= 4
+    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16  // Interrupt the host, TODO: might have to set different channels so the host can know which part we're writing to ?
+    LDI     BYTE_COUNTER, 0  // Reset counter/offset, which will make us write to the beginning of host memory again
+    QBA     continue_comb
+    
+check_half:
+    // If we have filled more than half of the buffer on the host side, send an interrupt, use TMP_REG to store the value of the host buffer divided by 2, because the host side memory length is a multiple of 8, so half of it will be a multiple of 4
+    LSR     TMP_REG, HOST_MEM_SIZE, 2
+    QBNE    continue_comb, TMP_REG, BYTE_COUNTER
+    // Interrupt the host to tell him we wrote to half of the buffer
+    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
 
+continue_comb:
     // Update LAST_INT value and LAST_COMBs
     // TODO: check this is correct, and this could perhaps be done in fewer instructions
     MOV     LAST_INT, INT3
