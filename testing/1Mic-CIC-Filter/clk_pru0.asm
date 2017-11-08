@@ -11,8 +11,6 @@
 Since a register is 32-bits long, we have to select a byte of the register if we
 want to use an operand > 255 */
 #define CLK_PIN r30.b1
-// TODO: Figure out how interrupts work
-#define PRU0_ARM_INTERRUPT 19
 
 TOP:
     MOV     r0, CYCLES
@@ -24,7 +22,3 @@ _LOOP:
     // XXX: see above why we do not shift it by 15
     XOR     CLK_PIN, CLK_PIN, 1 << 7
     QBA     TOP
-
-    // Interrupt the host so it knows we're done
-    MOV     r31.b0, PRU0_ARM_INTERRUPT + 16
-    HALT
