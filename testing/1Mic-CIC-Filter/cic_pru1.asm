@@ -100,8 +100,8 @@ WAIT_EDGE:
     WBS     IN_PINS, CLK_OFFSET
 
     // Wait for t_dv time, since it can be at most 125ns, we have to wait for 25 cycles
+    LDI     WAIT_COUNTER, 12 // Because 25 = 1 + 12*2 and the loop takes 2 one-cycle ops
 WAIT_SIGNAL:
-    LDI     WAIT_COUNTER, 8 // Because 8 = ceil(25 / 3) and the loop takes 3 one-cycle ops
     SUB     WAIT_COUNTER, WAIT_COUNTER, 1
     QBNE    WAIT_SIGNAL, WAIT_COUNTER, 0
 
