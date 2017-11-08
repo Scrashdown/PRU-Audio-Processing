@@ -39,6 +39,9 @@ int setup_mmaps(volatile uint32_t ** pru_mem, volatile void ** host_mem, unsigne
     // The PRU needs the physical address of the memory it will write to
     unsigned int HOST_mem_phys_addr = prussdrv_get_phys_addr((void *) HOST_mem);
 
+    // Trim HOST_mem_len down so that it is a multiple of 8. This will ensure that HOST_mem_len / 2 is a multiple of 4, which allows the PRU to check if it has reached half if the buffer by doing a simple equality check (4 because it is writing 4 B at a time)
+    HOST_mem_len = (HOST_mem_len >> 3) << 3;
+
     printf("%u bytes of Host memory available.\n", HOST_mem_phys_addr);
     printf("Physical (PRU-side) address: %x\n", HOST_mem_phys_addr);
     printf("Virtual (Host-side) address: %p\n\n", HOST_mem);
