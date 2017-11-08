@@ -29,8 +29,8 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define PRU1_ARM_INTERRUPT 20
 
 // Input pins offsets
-#define CLK_OFFSET 0
-#define DATA_OFFSET 1
+#define CLK_OFFSET 11
+#define DATA_OFFSET 10
 
 // Register aliases
 #define IN_PINS r31
@@ -109,8 +109,8 @@ wait_signal:
     QBNE    wait_signal, WAIT_COUNTER, 0
 
     // Retrieve data from DATA pin (only one bit!)
-    AND     TMP_REG, IN_PINS, 1 << DATA_OFFSET
-    LSR     TMP_REG, TMP_REG, DATA_OFFSET
+    LSR     TMP_REG, IN_PINS, DATA_OFFSET
+    AND     TMP_REG, TMP_REG, 1
     // Do the integrator operations
     ADD     SAMPLE_COUNTER, SAMPLE_COUNTER, 1
     ADD     INT0, INT0, TMP_REG
@@ -138,9 +138,8 @@ wait_signal:
     // First, check if we are about to overrun the buffer, that is, if HOST_MEM_SIZE - BYTE_COUNTER < 4
     // If yes, send an interrupt to the host, and reset the byte counter/offset back to 0
     // TODO: since HOST_MEM_SIZE is a multiple of 8, maybe we could just do an equality check ?
-    //SUB     TMP_REG, HOST_MEM_SIZE, BYTE_COUNTER
-    //QBGE    check_half, 4, TMP_REG  // Jump to "check_half" if HOST_MEM_SIZE - BYTE_COUNTER >= 4
     QBNE    check_half, HOST_MEM_SIZE, BYTE_COUNTER
+    // FIXME: perhaps MOV on r31.b0 actually writes to *all* of it's bits and this causes issues, we could write something to host memory and do polling from the host instead. Perhaps we could try "saving" all of the other bits of r31, I think MOV r31.b0 actually influences all bits
     MOV     r31.b0, PRU1_ARM_INTERRUPT + 16  // Interrupt the host, TODO: could be done in a safer way by writing to the host memory which buffer we're in
     LDI     BYTE_COUNTER, 0  // Reset counter/offset, which will make us write to the beginning of host memory again
     QBA     continue_comb
