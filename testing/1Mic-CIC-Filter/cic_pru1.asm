@@ -96,7 +96,7 @@ TOP:
     LDI     LAST_COMB2, 0
 
     // ### Signal processing ###
-WAIT_EDGE:
+wait_edge:
     // First wait for CLK = 0
     WBC     IN_PINS, CLK_OFFSET
     // Then wait for CLK = 1
@@ -104,9 +104,9 @@ WAIT_EDGE:
 
     // Wait for t_dv time, since it can be at most 125ns, we have to wait for 25 cycles
     LDI     WAIT_COUNTER, 12 // Because 25 = 1 + 12*2 and the loop takes 2 one-cycle ops
-WAIT_SIGNAL:
+wait_signal:
     SUB     WAIT_COUNTER, WAIT_COUNTER, 1
-    QBNE    WAIT_SIGNAL, WAIT_COUNTER, 0
+    QBNE    wait_signal, WAIT_COUNTER, 0
 
     // Retrieve data from DATA pin (only one bit!)
     AND     TMP_REG, IN_PINS, 1 << DATA_OFFSET
@@ -119,7 +119,7 @@ WAIT_SIGNAL:
     ADD     INT3, INT3, INT2
 
     // Branch for oversampling
-    QBNE    WAIT_EDGE, SAMPLE_COUNTER, 64
+    QBNE    wait_edge, SAMPLE_COUNTER, 64
 
     // Reset sample counter once we reach R
     LDI     SAMPLE_COUNTER, 0
@@ -137,12 +137,15 @@ WAIT_SIGNAL:
     ADD     BYTE_COUNTER, BYTE_COUNTER, 4
     // First, check if we are about to overrun the buffer, that is, if HOST_MEM_SIZE - BYTE_COUNTER < 4
     // If yes, send an interrupt to the host, and reset the byte counter/offset back to 0
-    SUB     TMP_REG, HOST_MEM_SIZE, BYTE_COUNTER
-    QBGE    check_half, 4, TMP_REG  // Jump to "check_half" if HOST_MEM_SIZE - BYTE_COUNTER >= 4
-    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16  // Interrupt the host, TODO: might have to set different channels so the host can know which part we're writing to ?
+    // TODO: since HOST_MEM_SIZE is a multiple of 8, maybe we could just do an equality check ?
+    //SUB     TMP_REG, HOST_MEM_SIZE, BYTE_COUNTER
+    //QBGE    check_half, 4, TMP_REG  // Jump to "check_half" if HOST_MEM_SIZE - BYTE_COUNTER >= 4
+    QBNE    check_half, HOST_MEM_SIZE, BYTE_COUNTER
+    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16  // Interrupt the host, TODO: could be done in a safer way by writing to the host memory which buffer we're in
     LDI     BYTE_COUNTER, 0  // Reset counter/offset, which will make us write to the beginning of host memory again
     QBA     continue_comb
-    
+
+// TODO: could be done in a more efficient way, by storing the half value in a register
 check_half:
     // If we have filled more than half of the buffer on the host side, send an interrupt, use TMP_REG to store the value of the host buffer divided by 2, because the host side memory length is a multiple of 8, so half of it will be a multiple of 4
     LSR     TMP_REG, HOST_MEM_SIZE, 2
@@ -159,7 +162,7 @@ continue_comb:
     MOV     LAST_COMB2, COMB2
 
     // Branch back to wait edge
-    QBA     WAIT_EDGE
+    QBA     wait_edge
 
     // Interrupt the host so it knows we're done
     MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
