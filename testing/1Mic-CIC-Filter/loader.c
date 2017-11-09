@@ -88,14 +88,7 @@ void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_l
             buffer_side = 0;
         }
 
-        // Write the data to the file from the buffer
-        // TODO: this should be done some other way since this is a wav file
-        /*
-        size_t nwritten = fwrite(host_mem + offset, 1, nmemb, output);
-        if (nwritten != nmemb) {
-            fprintf(stderr, "Error writing file!\n");
-        }
-        */
+        // TODO: Write the data to the file from the buffer
     }
 }
 
@@ -167,16 +160,6 @@ int main(int argc, char **argv) {
     // Start processing on the received data
     processing(output, HOST_mem, HOST_mem_len);
     
-    /*
-    // Wait for PRUs to terminate
-    prussdrv_pru_wait_event(PRU_EVTOUT_0);
-    //prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
-    printf("PRU0 program terminated\n");
-    prussdrv_pru_wait_event(PRU_EVTOUT_1);
-    //prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
-    printf("PRU1 program terminated\n");
-    */
-
     // Disable PRUs and the pruss driver. Also close the opened file.
     stop(output);
 
