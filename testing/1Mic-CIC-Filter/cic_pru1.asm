@@ -60,10 +60,15 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define LAST_COMB1 r15
 #define LAST_COMB2 r16
 
-.origin 0
-.entrypoint TOP
+// DEBUG (assumes P8.45)
+#define SET_LED SET r30, r30, 0
+#define CLR_LED CLR r30, r30, 0
 
-TOP:
+.origin 0
+.entrypoint start
+
+start:
+    CLR_LED
     // ### Memory management ###
     // Enable OCP master ports in SYSCFG register
     // It is okay to use the r0 register here (which we use later too) because it merely serves as a mean to temporary hold the value of C4 + 4, the OCP masters are enabled by writing the correct data to C4
@@ -95,8 +100,9 @@ TOP:
     LDI     LAST_COMB1, 0
     LDI     LAST_COMB2, 0
 
+
     // ### Signal processing ###
-wait_edge:
+wait_edge:  // XXX: TESTED and WORKS
     // First wait for CLK = 0
     WBC     IN_PINS, CLK_OFFSET
     // Then wait for CLK = 1
@@ -160,7 +166,11 @@ continue_comb:
     MOV     LAST_COMB1, COMB1
     MOV     LAST_COMB2, COMB2
 
+    // FIXME: remove this interrupt, it's just for testing that we detect rising edges
+    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
+
     // Branch back to wait edge
+    SET_LED
     QBA     wait_edge
 
     // Interrupt the host so it knows we're done
