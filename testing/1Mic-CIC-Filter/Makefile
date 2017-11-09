@@ -5,7 +5,7 @@ LDFLAGS = -lprussdrv
 all: pru0_clk pru1_cic loading
 
 clean:
-	rm gen/*
+	-@rm gen/*
 
 # Assemble pru files and move them to the gen/ directory
 pru0_clk: clk_pru0.asm prudefs.hasm
