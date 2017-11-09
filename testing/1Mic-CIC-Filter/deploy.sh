@@ -14,6 +14,10 @@ config-pin -q P8.28
 echo "CLK in (PRU1)"
 config-pin -a P8.30 pruin
 config-pin -q P8.30
+## Debug LED from PRU1
+echo "Debig LED out (PRU1)"
+config-pin -a P8.45 pruout
+config-pin -q P8.45
 
 # Build the program
 mkdir -p gen
