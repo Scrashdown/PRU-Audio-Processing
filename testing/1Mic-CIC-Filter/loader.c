@@ -90,6 +90,9 @@ void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_l
         }
 
         // TODO: Write the data to the file from the buffer
+        printf("Write %zu bytes to file.\n", nmemb);
+        const size_t written = fwrite((const void *) ptr, 1, nmemb, output);
+        printf("%zu bytes written to file.\n", written);
     }
 }
 
@@ -138,6 +141,9 @@ int main(int argc, char **argv) {
     if (ret_setup != 0) {
         stop(NULL);
         return -1;
+    } else if (PRU_mem == NULL || HOST_mem == NULL) {
+        stop(NULL);
+        return -1;
     }
 
     // Load the two PRU programs
@@ -145,17 +151,24 @@ int main(int argc, char **argv) {
     ret = prussdrv_exec_program(PRU_NUM0, argv[1]);
     if (ret) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
+        stop(NULL);
     	return ret;
     }
 
     
     // Setup output files and any stuff required for properly reading the data output from the PRU
-    FILE * output = fopen("output/out.wav", "w");
+    FILE * output = fopen("output/out.raw", "a");  // "a" for appending
+    if (output == NULL) {
+        fprintf(stderr, "Error: could not open output file.\n");
+        stop(NULL);
+        return -1;
+    }
     // Once this is done, load the program
     printf("Loading \"%s\" program on PRU1\n", argv[2]);
     ret = prussdrv_exec_program(PRU_NUM1, argv[2]);
     if (ret) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[2]);
+        stop(output);
     	return ret;
     }
 
