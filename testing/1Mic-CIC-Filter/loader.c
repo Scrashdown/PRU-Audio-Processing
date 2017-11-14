@@ -161,7 +161,7 @@ int main(int argc, char ** argv) {
 
     
     // Setup output files and any stuff required for properly reading the data output from the PRU
-    FILE * output = fopen("../output/out.raw", "w");
+    FILE * output = fopen("../output/out.pcm", "w");
     if (output == NULL) {
         fprintf("Error! Could not open file (%d: %s)\n", errno, strerror(errno));
         stop(NULL);
