@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <unistd.h>
+#include <errno.h>
 #include <pruss/prussdrv.h>
 #include <pruss/pruss_intc_mapping.h>
 
@@ -89,10 +90,14 @@ void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_l
             buffer_side = 0;
         }
 
-        // TODO: Write the data to the file from the buffer
-        printf("Write %zu bytes to file.\n", nmemb);
+        // Write the data to the file from the buffer
         const size_t written = fwrite((const void *) ptr, 1, nmemb, output);
-        printf("%zu bytes written to file.\n", written);
+        if (written == nmemb) {
+            printf("%zu bytes written to file.\n", written);
+        }
+        else {
+            fprintf(stderr, "Error! Could not write to file (%d: %s)\n", errno, strerror(errno));
+        }
     }
 }
 
@@ -108,7 +113,7 @@ void stop(FILE * file) {
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv) {
     if (argc != 3) {
         printf("Usage: %s pru0.bin pru1.bin\n", argv[0]);
         return 1;
@@ -131,7 +136,6 @@ int main(int argc, char **argv) {
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
     prussdrv_pruintc_init(&pruss_intc_initdata);
 
-    // 
     volatile uint32_t * PRU_mem = NULL;
     volatile void * HOST_mem = NULL;
     unsigned int HOST_mem_len = 0;
@@ -157,9 +161,9 @@ int main(int argc, char **argv) {
 
     
     // Setup output files and any stuff required for properly reading the data output from the PRU
-    FILE * output = fopen("output/out.raw", "a");  // "a" for appending
+    FILE * output = fopen("../output/out.raw", "w");
     if (output == NULL) {
-        fprintf(stderr, "Error: could not open output file.\n");
+        fprintf("Error! Could not open file (%d: %s)\n", errno, strerror(errno));
         stop(NULL);
         return -1;
     }
