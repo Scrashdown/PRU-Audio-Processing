@@ -17,8 +17,6 @@
 #include <pruss/prussdrv.h>
 #include <pruss/pruss_intc_mapping.h>
 
-//#include "wav_utils.h"
-
 #define PRU_NUM0 0
 #define PRU_NUM1 1
 
