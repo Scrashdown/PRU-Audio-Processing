@@ -1,6 +1,8 @@
 CC = gcc
-PRU_CC = pasm
+CFLAGS = -Wall
 LDFLAGS = -lprussdrv
+
+PRU_CC = pasm
 
 all: pru0_clk pru1_cic loading
 
@@ -27,5 +29,5 @@ loading: loader.c
 	@tput bold
 	@echo "\n----- Building C Host Loader -----"
 	@tput sgr0
-	$(CC) -o loader loader.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o loader loader.c $(LDFLAGS)
 	mv loader gen/
