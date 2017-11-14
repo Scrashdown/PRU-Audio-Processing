@@ -20,6 +20,7 @@ config-pin -a P8.45 pruout
 config-pin -q P8.45
 
 # Build the program
+mkdir -p output
 mkdir -p gen
 make clean
 make
