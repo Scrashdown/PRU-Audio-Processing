@@ -1,6 +1,7 @@
 am335x_pru_package/
 Captures/
 
-*/gen/?*
+*/gen/*
+*/output/*
 *.bin
 loader
