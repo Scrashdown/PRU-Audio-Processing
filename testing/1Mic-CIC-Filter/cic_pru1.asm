@@ -55,7 +55,6 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define COMB0 r10
 #define COMB1 r11
 #define COMB2 r12
-//#define COMB3 r13
 #define LAST_COMB0 r14
 #define LAST_COMB1 r15
 #define LAST_COMB2 r16
