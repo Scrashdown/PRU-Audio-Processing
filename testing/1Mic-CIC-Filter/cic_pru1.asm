@@ -44,7 +44,7 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define HOST_MEM_SIZE r21
 #define LOCAL_MEM r22
 // Defined in page 19 of the AM335x PRU-ICSS Reference guide
-#define LOCAL_MEM_ADDR 0x2000
+#define LOCAL_MEM_ADDR 0x0000
 
 #define INT0 r0
 #define INT1 r1
@@ -63,12 +63,12 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 // DEBUG (assumes P8.45)
 #define SET_LED SET r30, r30, 0
 #define CLR_LED CLR r30, r30, 0
+#define TOGGLE_LED XOR r30, r30, 1
 
 .origin 0
 .entrypoint start
 
 start:
-    CLR_LED
     // ### Memory management ###
     // Enable OCP master ports in SYSCFG register
     // It is okay to use the r0 register here (which we use later too) because it merely serves as a mean to temporary hold the value of C4 + 4, the OCP masters are enabled by writing the correct data to C4
@@ -94,7 +94,6 @@ start:
     LDI     COMB0, 0
     LDI     COMB1, 0
     LDI     COMB2, 0
-    //LDI     COMB3, 0
     LDI     LAST_INT, 0
     LDI     LAST_COMB0, 0
     LDI     LAST_COMB1, 0
@@ -144,8 +143,7 @@ wait_signal:
     // First, check if we are about to overrun the buffer, that is, if HOST_MEM_SIZE - BYTE_COUNTER < 4
     // If yes, send an interrupt to the host, and reset the byte counter/offset back to 0
     // TODO: since HOST_MEM_SIZE is a multiple of 8, maybe we could just do an equality check ?
-    QBNE    check_half, HOST_MEM_SIZE, BYTE_COUNTER
-    // FIXME: perhaps MOV on r31.b0 actually writes to *all* of it's bits and this causes issues, we could write something to host memory and do polling from the host instead. Perhaps we could try "saving" all of the other bits of r31, I think MOV r31.b0 actually influences all bits
+    QBNE    check_half, BYTE_COUNTER, HOST_MEM_SIZE
     MOV     r31.b0, PRU1_ARM_INTERRUPT + 16  // Interrupt the host, TODO: could be done in a safer way by writing to the host memory which buffer we're in
     LDI     BYTE_COUNTER, 0  // Reset counter/offset, which will make us write to the beginning of host memory again
     QBA     continue_comb
@@ -153,7 +151,7 @@ wait_signal:
 // TODO: could be done in a more efficient way, by storing the half value in a register
 check_half:
     // If we have filled more than half of the buffer on the host side, send an interrupt, use TMP_REG to store the value of the host buffer divided by 2, because the host side memory length is a multiple of 8, so half of it will be a multiple of 4
-    LSR     TMP_REG, HOST_MEM_SIZE, 2
+    LSR     TMP_REG, HOST_MEM_SIZE, 1
     QBNE    continue_comb, TMP_REG, BYTE_COUNTER
     // Interrupt the host to tell him we wrote to half of the buffer
     MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
@@ -166,14 +164,5 @@ continue_comb:
     MOV     LAST_COMB1, COMB1
     MOV     LAST_COMB2, COMB2
 
-    // FIXME: remove this interrupt, it's just for testing that we detect rising edges
-    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
-
-    // Branch back to wait edge
-    SET_LED
+    // Branch back to wait
     QBA     wait_edge
-
-    // Interrupt the host so it knows we're done
-    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
-
-    HALT
