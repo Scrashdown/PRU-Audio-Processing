@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <unistd.h>
 #include <pruss/prussdrv.h>
 #include <pruss/pruss_intc_mapping.h>
 
@@ -157,6 +158,7 @@ int main(int argc, char **argv) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[2]);
     	return ret;
     }
+
     // Start processing on the received data
     processing(output, HOST_mem, HOST_mem_len);
     
