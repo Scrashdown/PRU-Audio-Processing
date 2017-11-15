@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 in_file = "../output/out.pcm"
 out_file = "../output/out.wav"
 
-offset = 0
+# FIXME: there is currently a spike at the beginning of the recording, cut it off for now
+offset = 20000
 
 # Get the raw data to a numpy u32 array
 raw_u32 = np.fromfile(in_file, dtype=np.uint32, count=-1, sep='')
