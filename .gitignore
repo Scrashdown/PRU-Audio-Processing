@@ -1,5 +1,6 @@
 am335x_pru_package/
 Captures/
+.vscode/
 
 */gen/*
 */output/*
