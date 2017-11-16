@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 #include <pruss/prussdrv.h>
 #include <pruss/pruss_intc_mapping.h>
 
@@ -147,7 +148,7 @@ int main(int argc, char ** argv) {
     // Setup output files and any stuff required for properly reading the data output from the PRU
     FILE * output = fopen("../output/out.pcm", "w");
     if (output == NULL) {
-        fprintf("Error! Could not open file (%d: %s)\n", errno, strerror(errno));
+        fprintf(stderr, "Error! Could not open file (%d: %s)\n", errno, strerror(errno));
         stop(NULL);
         return -1;
     }
