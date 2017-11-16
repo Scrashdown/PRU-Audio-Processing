@@ -1,7 +1,7 @@
 // Loads the PRU files, executes them, and waits for completion.
 //
 // Usage:
-// $ ./loader pru0.bin pru1.bin
+// $ ./loader pru1.bin
 //
 // Compile with:
 // gcc -o loader loader.c -lprussdrv
@@ -101,7 +101,6 @@ void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_l
 
 
 void stop(FILE * file) {
-    prussdrv_pru_disable(PRU_NUM0);
     prussdrv_pru_disable(PRU_NUM1);
     prussdrv_exit();
 
@@ -112,28 +111,25 @@ void stop(FILE * file) {
 
 
 int main(int argc, char ** argv) {
-    if (argc != 3) {
-        printf("Usage: %s pru0.bin pru1.bin\n", argv[0]);
+    if (argc != 2) {
+        printf("Usage: %s pru1.bin\n", argv[0]);
         return 1;
     }
 
+    // ##### Prussdrv setup #####
     prussdrv_init();
-    // Load the firmware on both PRUs
-    unsigned int ret = prussdrv_open(PRU_EVTOUT_0);
+    unsigned int ret = prussdrv_open(PRU_EVTOUT_1);
 	if (ret) {
-        fprintf(stderr, "PRU0 : prussdrv_open failed\n");
-        return ret;
-    }
-    ret = prussdrv_open(PRU_EVTOUT_1);
-    if (ret) {
         fprintf(stderr, "PRU1 : prussdrv_open failed\n");
         return ret;
     }
+
 
     // Initialize interrupts or smth like that
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
     prussdrv_pruintc_init(&pruss_intc_initdata);
 
+    // ##### Setup memory mappings #####
     volatile uint32_t * PRU_mem = NULL;
     volatile void * HOST_mem = NULL;
     unsigned int HOST_mem_len = 0;
@@ -148,16 +144,6 @@ int main(int argc, char ** argv) {
         return -1;
     }
 
-    // Load the two PRU programs
-    printf("Loading \"%s\" program on PRU0\n", argv[1]);
-    ret = prussdrv_exec_program(PRU_NUM0, argv[1]);
-    if (ret) {
-    	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
-        stop(NULL);
-    	return ret;
-    }
-
-    
     // Setup output files and any stuff required for properly reading the data output from the PRU
     FILE * output = fopen("../output/out.pcm", "w");
     if (output == NULL) {
@@ -165,12 +151,13 @@ int main(int argc, char ** argv) {
         stop(NULL);
         return -1;
     }
-    // Once this is done, load the program
-    printf("Loading \"%s\" program on PRU1\n", argv[2]);
-    ret = prussdrv_exec_program(PRU_NUM1, argv[2]);
+
+    // Load the PRU program(s)
+    printf("Loading \"%s\" program on PRU1\n", argv[1]);
+    ret = prussdrv_exec_program(PRU_NUM1, argv[1]);
     if (ret) {
-    	fprintf(stderr, "ERROR: could not open %s\n", argv[2]);
-        stop(output);
+    	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
+        stop(NULL);
     	return ret;
     }
 
