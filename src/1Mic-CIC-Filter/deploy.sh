@@ -2,8 +2,8 @@
 # Stop on first error
 set -e
 
-PWM_PERIOD_NS = 800
-PWM_DUTY_CYCLE = 400
+export PWM_PERIOD_NS = 800
+export PWM_DUTY_CYCLE = 400
 
 ## Setup pin P9.14 for PWM (CLK) output
 echo "PWM/CLK output (BeagleBone)"
