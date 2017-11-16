@@ -141,13 +141,11 @@ wait_signal:
     ADD     BYTE_COUNTER, BYTE_COUNTER, 4
     // First, check if we are about to overrun the buffer, that is, if HOST_MEM_SIZE - BYTE_COUNTER < 4
     // If yes, send an interrupt to the host, and reset the byte counter/offset back to 0
-    // TODO: since HOST_MEM_SIZE is a multiple of 8, maybe we could just do an equality check ?
     QBNE    check_half, BYTE_COUNTER, HOST_MEM_SIZE
     MOV     r31.b0, PRU1_ARM_INTERRUPT + 16  // Interrupt the host, TODO: could be done in a safer way by writing to the host memory which buffer we're in
     LDI     BYTE_COUNTER, 0  // Reset counter/offset, which will make us write to the beginning of host memory again
     QBA     continue_comb
 
-// TODO: could be done in a more efficient way, by storing the half value in a register
 check_half:
     // If we have filled more than half of the buffer on the host side, send an interrupt, use TMP_REG to store the value of the host buffer divided by 2, because the host side memory length is a multiple of 8, so half of it will be a multiple of 4
     LSR     TMP_REG, HOST_MEM_SIZE, 1
