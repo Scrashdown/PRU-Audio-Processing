@@ -8,13 +8,14 @@ PWM_PERIOD_NS='800'
 PWM_DUTY_CYCLE='400'
 
 cd /sys/class/pwm/pwmchip3/
-echo "1"
-echo 0 > export
+# Check pwm0 does not exist, if it exists, the next command will cause an I/O error
+if [ ! -d 'pwm0' ]; then
+    # This will create
+    echo 0 > export
+fi
+
 # Setting up parameters for PWM and enable it
-echo "2"
+cd pwm0/
 echo $PWM_PERIOD_NS > period
-echo "3"
 echo $PWM_DUTY_CYCLE > duty_cycle
-echo "4"
 echo 1 > enable
-echo "finish"
