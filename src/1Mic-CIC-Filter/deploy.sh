@@ -4,7 +4,7 @@ set -e
 
 ## Setup pin P9.14 for PWM (CLK) output
 echo "PWM/CLK output (BeagleBone)"
-config-pin -a P9.14 PWM
+config-pin -a P9.14 pwm
 config-pin -q P9.14
 sudo su
     PWM_PERIOD_NS='800'
