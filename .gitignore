@@ -3,6 +3,6 @@ Captures/
 .vscode/
 
 */gen/*
-*/output/*
+src/*/output/*
 *.bin
 loader
