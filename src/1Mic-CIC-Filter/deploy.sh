@@ -2,14 +2,14 @@
 # Stop on first error
 set -e
 
-export PWM_PERIOD_NS = 800
-export PWM_DUTY_CYCLE = 400
-
 ## Setup pin P9.14 for PWM (CLK) output
 echo "PWM/CLK output (BeagleBone)"
 config-pin -a P9.14 PWM
 config-pin -q P9.14
 sudo su
+    PWM_PERIOD_NS='800'
+    PWM_DUTY_CYCLE='400'
+
     cd /sys/class/pwm/pwmchip3/
     echo 0 > export
     # Setting up parameters for PWM and enable it
