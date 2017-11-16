@@ -27,7 +27,7 @@ echo "CLK in (PRU1)"
 config-pin -a P8.30 pruin
 config-pin -q P8.30
 ## Debug LED from PRU1
-echo "Debig LED out (PRU1)"
+echo "Debug LED out (PRU1)"
 config-pin -a P8.45 pruout
 config-pin -q P8.45
 
