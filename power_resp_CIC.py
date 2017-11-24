@@ -50,9 +50,10 @@ if __name__ == "__main__":
     # add plot of f_c line
 
     plt.tight_layout()
-    plt.title('Attenuation [dB] for N=%d, M=%d, R=%d'%(N,M,R))
+    plt.title('N=%d, M=%d, R=%d'%(N,M,R), fontsize=20)
     plt.grid()
-    plt.xlabel('Frequency [Hz]')
+    plt.xlabel('Frequency [Hz]', fontsize=20)
+    plt.ylabel('Attenuation [dB]', fontsize=20)
     plt.ylim([-40,0])
-    plt.legend(['P','Cutoff','8kHz'])
+    plt.legend(['P', 'Cutoff', '8kHz'], fontsize=20)
     plt.show()
