@@ -17,9 +17,9 @@ values_range = raw_u32.max() - raw_u32.min()
 norm_f32 = np.subtract(raw_u32, (raw_u32.max() + raw_u32.min()) / 2)
 norm_f32 = np.divide(norm_f32, max(abs(norm_f32)))
 
-#plt.figure()
-#plt.plot(norm_f32)
-#plt.show()
+plt.figure()
+plt.plot(norm_f32)
+plt.show()
 
 # Write data to wav file
 wf.write(out_file, 19297, norm_f32)
