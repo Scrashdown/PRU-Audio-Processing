@@ -6,7 +6,7 @@ set -e
 echo "PWM/CLK output (BeagleBone)"
 config-pin -a P9.14 pwm
 config-pin -q P9.14
-sudo sh "PWMsetup.sh"
+sudo sh "../utils/PWMsetup.sh"
 
 ## DATA input pin to PRU1
 echo "DATA in (PRU1)"
