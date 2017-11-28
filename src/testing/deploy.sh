@@ -15,4 +15,4 @@ make
 
 # Start the program
 cd gen
-./loader pru0.asm
+./loader pru0.bin
