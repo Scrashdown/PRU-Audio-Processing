@@ -14,7 +14,7 @@ pru0: pru0.asm prudefs.hasm
 	@tput bold
 	@echo "\n----- Building PRU0 Firmware -----"
 	@tput sgr0
-	$(PRU_CC) -b pru0.asm
+	$(PRU_CC) -b -V3 pru0.asm
 	mv *.bin gen/
 
 # Build the loader program
