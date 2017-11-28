@@ -35,10 +35,13 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 start:
     CLR_LED
 
+    // Memory address
+    MOV     r1, 0
+
     MOV     r0.w0, 0xFFFF
     MOV     r0.w1, 0xFFFF
     
-    SBBO    r0, 0, 0, 4
+    SBBO    r0, r1, 0, 4
 
 end:
     HALT
