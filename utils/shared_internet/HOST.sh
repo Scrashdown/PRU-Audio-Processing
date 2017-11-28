@@ -4,6 +4,8 @@
 # Run this script on the host side to share internet with the BBB
 # /!\ You will probably need to change the interfaces names first
 
+set -e
+
 INTERNET_INTERFACE="wlp2s0"
 BBB_INTERFACE="enp62s0u1"
 
