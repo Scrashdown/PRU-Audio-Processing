@@ -163,9 +163,9 @@ start:
 
     // ### Setup start configuration ###
     // Set all register values to zero, except r31
-    // Make sure bank 1 is also set to 0
+    // Make sure bank 0 is also set to 0
     ZERO    0, 124
-    XOUT    BANK1, r0, 124
+    XOUT    BANK0, r0, 124
 
     // ##### CHANNELS 1 - 4 #####
 chan1to4:
