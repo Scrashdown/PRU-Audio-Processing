@@ -81,7 +81,7 @@ int main(int argc, char ** argv) {
 
     // Display value in PRU memory
     uint32_t value = PRUmem[0];
-    printf("Value in PRU memory: %"PRIu32"\n", value);
+    printf("Value in PRU memory: 0x%x\n", value);
     
     // Disable PRUs and the pruss driver. Also close the opened file.
     stop(NULL);

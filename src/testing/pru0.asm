@@ -39,7 +39,9 @@ start:
     MOV     r1, 0
 
     MOV     r0.w0, 0xFFFF
-    MOV     r0.w1, 0xFFFF
+    MOV     r0.w2, 0xFFFF
+
+    ADD     r0.w0, r0.w0, 1
     
     SBBO    r0, r1, 0, 4
 
