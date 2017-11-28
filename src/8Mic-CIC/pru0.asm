@@ -57,15 +57,15 @@ http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define SAMPLE_COUNTER r28
 
 // Input pins offsets
-#define CLK_OFFSET ???   // TODO:
-#define DAT_OFFSET1 ???  // TODO:
-#define DAT_OFFSET2 ???  // TODO:
-#define DAT_OFFSET3 ???  // TODO:
-#define DAT_OFFSET4 ???  // TODO:
-#define DAT_OFFSET5 ???  // TODO:
-#define DAT_OFFSET6 ???  // TODO:
-#define DAT_OFFSET7 ???  // TODO:
-#define DAT_OFFSET8 ???  // TODO:
+#define CLK_OFFSET 0   // TODO:
+#define DAT_OFFSET1 0  // TODO:
+#define DAT_OFFSET2 0  // TODO:
+#define DAT_OFFSET3 0  // TODO:
+#define DAT_OFFSET4 0  // TODO:
+#define DAT_OFFSET5 0  // TODO:
+#define DAT_OFFSET6 0  // TODO:
+#define DAT_OFFSET7 0  // TODO:
+#define DAT_OFFSET8 0  // TODO:
 
 // Decimation rate
 #define R 16
