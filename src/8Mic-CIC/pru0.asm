@@ -66,6 +66,12 @@ http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
 // Decimation rate
 #define R 16
 
+// Scratchpad register banks numbers
+#define BANK0 10
+#define BANK1 11
+#define BANK2 12
+#define PRU1_REGS 14
+
 // DEBUG (assumes P8.11)
 #define SET_LED SET r30, r30, 15
 #define CLR_LED CLR r30, r30, 15
@@ -78,7 +84,9 @@ start:
 
     // ### Setup start configuration ###
     // Set all register values to zero, except r31
+    // Make sure bank 1 is also set to 0
     ZERO    0, 124
+    XOUT    BANK1, r0, 124
 
     // ##### CHANNELS 1 - 4 #####
 wait_rising_edge:
@@ -140,8 +148,38 @@ wait_data:
     SUB     COMB0_CHAN12.W2, INT3_CHAN12.W2, LAST_INT_CHAN12.W2  // Channel 2
     SUB     COMB0_CHAN34.W0, INT3_CHAN34.W0, LAST_INT_CHAN34.W0  // Channel 3
     SUB     COMB0_CHAN34.W2, INT3_CHAN34.W2, LAST_INT_CHAN34.W2  // Channel 4
-    // Stage 0 / 3
+    // Stage 1 / 3
     SUB     COMB1_CHAN12.W0, COMB0_CHAN12.W0, LAST_COMB0_CHAN12.W0  // Channel 1
     SUB     COMB1_CHAN12.W2, COMB0_CHAN12.W2, LAST_COMB0_CHAN12.W2  // Channel 2
     SUB     COMB1_CHAN34.W0, COMB0_CHAN34.W0, LAST_COMB0_CHAN34.W0  // Channel 3
     SUB     COMB1_CHAN34.W2, COMB0_CHAN34.W2, LAST_COMB0_CHAN34.W2  // Channel 4
+    // Stage 2 / 3
+    SUB     COMB2_CHAN12.W0, COMB1_CHAN12.W0, LAST_COMB1_CHAN12.W0  // Channel 1
+    SUB     COMB2_CHAN12.W2, COMB1_CHAN12.W2, LAST_COMB1_CHAN12.W2  // Channel 2
+    SUB     COMB2_CHAN34.W0, COMB1_CHAN34.W0, LAST_COMB1_CHAN34.W0  // Channel 3
+    SUB     COMB2_CHAN34.W2, COMB1_CHAN34.W2, LAST_COMB1_CHAN34.W2  // Channel 4
+    // Stage 3 / 3
+    SUB     TMP_REG.W0, COMB2_CHAN12.W0, LAST_COMB2_CHAN12.W0  // Channel 1
+    SUB     TMP_REG.W2, COMB2_CHAN12.W2, LAST_COMB2_CHAN12.W2  // Channel 2
+    // TODO: output the result somewhere...
+    SUB     TMP_REG.W0, COMB2_CHAN34.W0, LAST_COMB2_CHAN34.W0  // Channel 3
+    SUB     TMP_REG.W2, COMB2_CHAN34.W2, LAST_COMB2_CHAN34.W2  // Channel 4
+    // TODO: output the result somewhere...
+
+    // Update comb values
+    MOV     LAST_INT_CHAN12, INT3_CHAN12
+    MOV     LAST_INT_CHAN34, INT3_CHAN34
+    MOV     LAST_COMB0_CHAN12, COMB0_CHAN12
+    MOV     LAST_COMB0_CHAN34, COMB0_CHAN34
+    MOV     LAST_COMB1_CHAN12, COMB1_CHAN12
+    MOV     LAST_COMB1_CHAN34, COMB1_CHAN34
+    MOV     LAST_COMB2_CHAN12, COMB2_CHAN12
+    MOV     LAST_COMB2_CHAN34, COMB2_CHAN34
+
+    // Swap registers for processing channels 5 - 8
+    // Store registers for chan. 1 - 4 in bank 0
+    XOUT    BANK0, r0, 44  // 44 = 4 * 11, we use 11 registers (r0 - r10) to store channels 1 - 4 data
+    // Load registers for chan. 5 - 8 from bank 1
+    XIN     BANK1, r11, 44  // Same, but for registers (r11 - r21) for channels 5 - 8
+
+    // TODO: reset sample counter to 0 at the end of we reached decimation rate
