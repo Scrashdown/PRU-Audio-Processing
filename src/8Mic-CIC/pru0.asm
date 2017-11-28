@@ -15,7 +15,7 @@
 
 /* Instructions set and macros:
 
-http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
+http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
 
 */
 
@@ -63,6 +63,9 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define DAT_OFFSET7 ???  // TODO:
 #define DAT_OFFSET8 ???  // TODO:
 
+// Decimation rate
+#define R 16
+
 // DEBUG (assumes P8.11)
 #define SET_LED SET r30, r30, 15
 #define CLR_LED CLR r30, r30, 15
@@ -77,6 +80,7 @@ start:
     // Set all register values to zero, except r31
     ZERO    0, 124
 
+    // ##### CHANNELS 1 - 4 #####
 wait_rising_edge:
     // First wait for CLK = 0, then wait for CLK = 1
     WBC     IN_PINS, CLK_OFFSET
@@ -88,21 +92,56 @@ wait_data:
     SUB     TMP_REG, TMP_REG, 1
     QBNE    wait_data, TMP_REG, 0
 
-    // Retrieve data from input pins and perform first stage of the integrators
+    // Update sample counter for decimation
+    ADD     SAMPLE_COUNTER, SAMPLE_COUNTER, 1
+
+    // Retrieve data from input pins and perform the 4 first stages of the integrators
+    // Stage 0 / 3
     LSR     TMP_REG, IN_PINS, DAT_OFFSET1
     AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN12.w0, INT0_CHAN12.w0, TMP_REG.w0
+    ADD     INT0_CHAN12.W0, INT0_CHAN12.W0, TMP_REG.W0
 
     LSR     TMP_REG, IN_PINS, DAT_OFFSET2
     AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN12.w2, INT0_CHAN12.w2, TMP_REG.w2
+    ADD     INT0_CHAN12.W2, INT0_CHAN12.W2, TMP_REG.W2
 
     LSR     TMP_REG, IN_PINS, DAT_OFFSET3
     AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN34.w0, INT0_CHAN34.w0, TMP_REG.w0
+    ADD     INT0_CHAN34.W0, INT0_CHAN34.W0, TMP_REG.W0
 
     LSR     TMP_REG, IN_PINS, DAT_OFFSET4
     AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN34.w2, INT0_CHAN34.w2, TMP_REG.w2
+    ADD     INT0_CHAN34.W2, INT0_CHAN34.W2, TMP_REG.W2
 
-    
+    // Perform additional integrator stages, update channels separately
+    // Stage 1 / 3
+    ADD     INT1_CHAN12.W0, INT1_CHAN12.W0, INT0_CHAN12.W0  // Channel 1
+    ADD     INT1_CHAN12.W2, INT1_CHAN12.W2, INT0_CHAN12.W2  // Channel 2
+    ADD     INT1_CHAN34.W0, INT1_CHAN34.W0, INT0_CHAN34.W0  // Channel 3
+    ADD     INT1_CHAN34.W2, INT1_CHAN34.W2, INT0_CHAN34.W2  // Channel 4
+    // Stage 2 / 3
+    ADD     INT2_CHAN12.W0, INT2_CHAN12.W0, INT1_CHAN12.W0  // Channel 1
+    ADD     INT2_CHAN12.W2, INT2_CHAN12.W2, INT1_CHAN12.W2  // Channel 2
+    ADD     INT2_CHAN34.W0, INT2_CHAN34.W0, INT1_CHAN34.W0  // Channel 3
+    ADD     INT2_CHAN34.W2, INT2_CHAN34.W2, INT1_CHAN34.W2  // Channel 4
+    // Stage 3 / 3
+    ADD     INT3_CHAN12.W0, INT3_CHAN12.W0, INT2_CHAN12.W0  // Channel 1
+    ADD     INT3_CHAN12.W2, INT3_CHAN12.W2, INT2_CHAN12.W2  // Channel 2
+    ADD     INT3_CHAN34.W0, INT3_CHAN34.W0, INT2_CHAN34.W0  // Channel 3
+    ADD     INT3_CHAN34.W2, INT3_CHAN34.W2, INT2_CHAN34.W2  // Channel 4
+
+    // TODO: Branch for oversampling, if ov. rate reached, execute comb stages
+    QBNE    wait_falling_edge, SAMPLE_COUNTER, 64
+
+    // ##### 27 / 53 cycles
+    // Perform comb stages, update channels separately
+    // Stage 0 / 3
+    SUB     COMB0_CHAN12.W0, INT3_CHAN12.W0, LAST_INT_CHAN12.W0  // Channel 1
+    SUB     COMB0_CHAN12.W2, INT3_CHAN12.W2, LAST_INT_CHAN12.W2  // Channel 2
+    SUB     COMB0_CHAN34.W0, INT3_CHAN34.W0, LAST_INT_CHAN34.W0  // Channel 3
+    SUB     COMB0_CHAN34.W2, INT3_CHAN34.W2, LAST_INT_CHAN34.W2  // Channel 4
+    // Stage 0 / 3
+    SUB     COMB1_CHAN12.W0, COMB0_CHAN12.W0, LAST_COMB0_CHAN12.W0  // Channel 1
+    SUB     COMB1_CHAN12.W2, COMB0_CHAN12.W2, LAST_COMB0_CHAN12.W2  // Channel 2
+    SUB     COMB1_CHAN34.W0, COMB0_CHAN34.W0, LAST_COMB0_CHAN34.W0  // Channel 3
+    SUB     COMB1_CHAN34.W2, COMB0_CHAN34.W2, LAST_COMB0_CHAN34.W2  // Channel 4
