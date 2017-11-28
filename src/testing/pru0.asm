@@ -37,11 +37,8 @@ start:
 
     MOV     r0.w0, 0xFFFF
     MOV     r0.w1, 0xFFFF
-    ADD     r0, r0, 1
-
-    // Should overflow
-    QBNE    end, r0, 0
-    SET_LED
+    
+    SBBO    r0, 0, 0, 4
 
 end:
     HALT
