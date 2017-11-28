@@ -36,12 +36,9 @@ start:
     CLR_LED
 
     // Memory address
-    MOV     r1, 0
+    LDI     r1, 0
 
-    MOV     r0.w0, 0xFFFF
-    MOV     r0.w2, 0xFFFF
-
-    ADD     r0.w0, r0.w0, 1
+    LDI     r1.t0, 1
     
     SBBO    r0, r1, 0, 4
 
