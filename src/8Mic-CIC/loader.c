@@ -49,24 +49,20 @@ void stop(FILE * file) {
 }
 
 
-void processing(FILE * output, volatile uint32_t * PRUmem) {
-    uint8_t host_buffer[10 * 16];
-    size_t counter = 0;
-    for (counter = 0; counter < 10; ++counter) {
+void processing(FILE * output, const uint8_t * host_buffer, size_t sample_count, volatile uint32_t * PRUmem) {
+    for (size_t counter = 0; counter < sample_count; ++counter) {
         // Wait for PRU interrupt
-        printf("Waiting for int...\n");
         prussdrv_pru_wait_event(PRU_EVTOUT_1);
         prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
-        printf("Interrupt received\n");
         // Read 16 bytes from PRU mem
         memcpy((void *) &host_buffer[16 * counter], (const void *) PRUmem, 16);
     }
 
     // Write the result to the file
-    size_t written = fwrite(host_buffer, 16, 10, output);
-    if (written != 10) {
+    size_t written = fwrite(host_buffer, 16, sample_count, output);
+    if (written != sample_count) {
         fprintf(stderr, "Error while writing to file!\n");
-        fprintf(stderr, "Written = %zu\n", written);
+        fprintf(stderr, "Written = %zu, expected = %zu\n", written, sample_count);
     }
 }
 
@@ -101,6 +97,16 @@ int main(int argc, char ** argv) {
         return -1;
     }
 
+    // Allocate host buffer for temporary storage of values
+    const size_t sample_size = 16;  // 8 channels, each 2 bytes
+    const size_t sample_count = 20000;
+    const uint8_t * host_buffer = (const uint8_t *) calloc(sample_count, sample_size);
+    if (host_buffer == NULL) {
+        fprintf(stderr, "Error allocating host buffer!\n");
+        stop(output);
+        return -1;
+    }
+
     // Load the PRU program(s)
     printf("Loading \"%s\" program on PRU1\n", argv[1]);
     ret = prussdrv_exec_program(PRU1, argv[1]);
@@ -112,7 +118,7 @@ int main(int argc, char ** argv) {
 
     printf("Processing...\n");
     // Start processing of the received data
-    processing(output, PRUmem);
+    processing(output, host_buffer, sample_count, PRUmem);
     
     // Disable PRUs and the pruss driver. Also close the opened file.
     stop(output);
