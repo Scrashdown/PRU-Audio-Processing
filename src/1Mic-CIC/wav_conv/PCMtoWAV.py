@@ -22,4 +22,4 @@ plt.plot(norm_f32)
 plt.show()
 
 # Write data to wav file
-wf.write(out_file, 19297, norm_f32)
+wf.write(out_file, 64000, norm_f32)
