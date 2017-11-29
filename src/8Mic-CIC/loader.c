@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
     volatile uint32_t * PRUmem = NULL;
     setup_mmaps(&PRUmem);
 
-    uint32_t * host_buffer = (uint32_t) malloc(10 * 16);
+    uint32_t * host_buffer = (uint32_t *) malloc(10 * 16);
     if (host_buffer == NULL) {
         fprintf(stderr, "Error allocating memory!\n");
         stop(NULL);
@@ -115,7 +115,7 @@ int main(int argc, char ** argv) {
     }
 
     // Start processing of the received data
-    processing(output, PRUmem);
+    processing(output, host_buffer, PRUmem);
     
     // Disable PRUs and the pruss driver. Also close the opened file.
     stop(output);
