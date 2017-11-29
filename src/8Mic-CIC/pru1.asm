@@ -35,26 +35,26 @@ http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define LAST_COMB1_CHAN12 r9
 #define LAST_COMB2_CHAN12 r10
 
-#define OUTPUT_CHAN12 r11
+#define INT0_CHAN34 r11
+#define INT1_CHAN34 r12
+#define INT2_CHAN34 r13
+#define INT3_CHAN34 r14
+#define LAST_INT_CHAN34 r15
 
-#define INT0_CHAN34 r12
-#define INT1_CHAN34 r13
-#define INT2_CHAN34 r14
-#define INT3_CHAN34 r15
-#define LAST_INT_CHAN34 r16
+#define COMB0_CHAN34 r16
+#define COMB1_CHAN34 r17
+#define COMB2_CHAN34 r18
+#define LAST_COMB0_CHAN34 r19
+#define LAST_COMB1_CHAN34 r20
+#define LAST_COMB2_CHAN34 r21
 
-#define COMB0_CHAN34 r17
-#define COMB1_CHAN34 r18
-#define COMB2_CHAN34 r19
-#define LAST_COMB0_CHAN34 r20
-#define LAST_COMB1_CHAN34 r21
-#define LAST_COMB2_CHAN34 r22
-
+#define OUTPUT_CHAN12 r22
 #define OUTPUT_CHAN34 r23
 
 #define IN_PINS r31
 #define TMP_REG r29
 #define SAMPLE_COUNTER r28
+#define LOCAL_MEM r27
 
 // Input pins offsets
 #define CLK_OFFSET 11
@@ -72,9 +72,14 @@ http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
 #define BANK2 12
 #define PRU1_REGS 14
 
-// DEBUG (assumes P8.11)
-#define SET_LED SET r30, r30, 15
-#define CLR_LED CLR r30, r30, 15
+// Defined in the PRU ref. guide
+#define LOCAL_MEM_ADDR 0x0
+
+#define PRU1_ARM_INTERRUPT 20
+
+// DEBUG (assumes P8.45)
+#define SET_LED SET r30, r30, 0
+#define CLR_LED CLR r30, r30, 0
 
 // Macros for integrator and comb stages
 .macro integrators
@@ -115,6 +120,7 @@ http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
 .endm
 
 .macro combs
+.mparam memoffset
     // ##### 27 / 72 cycles (at 16kHz)
     // Perform comb stages, update channels separately
     // Stage 0 / 3
@@ -135,10 +141,11 @@ http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
     // Stage 3 / 3
     SUB     OUTPUT_CHAN12.W0, COMB2_CHAN12.W0, LAST_COMB2_CHAN12.W0  // Channel 1
     SUB     OUTPUT_CHAN12.W2, COMB2_CHAN12.W2, LAST_COMB2_CHAN12.W2  // Channel 2
-    // The result will be written to BANK 0 and taken care of by PRU1
     SUB     OUTPUT_CHAN34.W0, COMB2_CHAN34.W0, LAST_COMB2_CHAN34.W0  // Channel 3
     SUB     OUTPUT_CHAN34.W2, COMB2_CHAN34.W2, LAST_COMB2_CHAN34.W2  // Channel 4
-    // The result will be written to BANK 0 and taken care of by PRU1
+    // Store result in PRU0 local memory
+    // TODO: find a way to change the offset if we're on the falling edge instead of the rising edge
+    SBBO    OUTPUT_CHAN12, LOCAL_MEM, memoffset, 8
 
     // Update comb values
     MOV     LAST_INT_CHAN12, INT3_CHAN12
@@ -162,6 +169,9 @@ start:
     // Make sure bank 0 is also set to 0
     ZERO    0, 124
     XOUT    BANK0, r0, 124
+
+    // Load local mem address in a register
+    LDI     LOCAL_MEM, LOCAL_MEM_ADDR
 
     // ##### CHANNELS 1 - 4 #####
 chan1to4:
@@ -190,7 +200,7 @@ wait_data1:
     QBNE    chan5to8, SAMPLE_COUNTER, 64
 
     // Comb stages
-    combs  // 24 cycles
+    combs(0)  // 25 cycles
 
     // ##### Channels 5 - 8 #####
 chan5to8:
@@ -217,7 +227,10 @@ wait_data2:
     LDI     SAMPLE_COUNTER, 0  // Reset counter to 0 this time
 
     // Comb stages...
-    combs  // 24 cycles
+    combs(8)  // 25 cycles
+
+    // Let the host know data is ready
+    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
 
     // Go back to computing channels 1 - 4
     QBA     chan1to4
