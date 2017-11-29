@@ -49,7 +49,18 @@ void stop(FILE * file) {
 
 
 void processing(FILE * output, volatile uint32_t * PRUmem) {
+    for (int i = 0; i < 10; ++i) {
+        // Wait for PRU interrupt
+        prussdrv_pru_wait_event(PRU_EVTOUT1);
+        prussdrv_pru_clear_event(PRU_EVTOUT1, PRU1_ARM_INTERRUPT);
 
+        // When we receive an interrupt, this means data for the 8 channels was written to the first 16 bytes of PRU memory
+        int written = fwrite((const void *) PRUmem, 1, 16, output);
+        if (written != 16) {
+            fprintf("Error writing file!");
+            return;
+        }
+    }
 }
 
 
