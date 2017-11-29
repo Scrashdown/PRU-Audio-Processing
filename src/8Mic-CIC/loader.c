@@ -62,11 +62,11 @@ int main(int argc, char ** argv) {
         return ret;
     }
 
-
     // Initialize interrupts or smth like that
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
     prussdrv_pruintc_init(&pruss_intc_initdata);
 
+    // Setup memory mapping
     volatile uint32_t * PRUmem = NULL;
     setup_mmaps(&PRUmem);
 

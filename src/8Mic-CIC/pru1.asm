@@ -81,38 +81,38 @@
 .macro integrators
     // Retrieve data from input pins and perform the 4 first stages of the integrators
     // Stage 0 / 3
-    LSR     TMP_REG, IN_PINS, DAT_OFFSET1
+    LSR     TMP_REG, IN_PINS, DAT_OFFSET1  // Load data from channel 1 or 5
     AND     TMP_REG, TMP_REG, 1
     ADD     INT0_CHAN12.W0, INT0_CHAN12.W0, TMP_REG.W0
 
-    LSR     TMP_REG, IN_PINS, DAT_OFFSET2
+    LSR     TMP_REG, IN_PINS, DAT_OFFSET2  // Load data from channel 2 or 6
     AND     TMP_REG, TMP_REG, 1
     ADD     INT0_CHAN12.W2, INT0_CHAN12.W2, TMP_REG.W2
 
-    LSR     TMP_REG, IN_PINS, DAT_OFFSET3
+    LSR     TMP_REG, IN_PINS, DAT_OFFSET3  // Load data from channel 3 or 7
     AND     TMP_REG, TMP_REG, 1
     ADD     INT0_CHAN34.W0, INT0_CHAN34.W0, TMP_REG.W0
 
-    LSR     TMP_REG, IN_PINS, DAT_OFFSET4
+    LSR     TMP_REG, IN_PINS, DAT_OFFSET4  // Load data from channel 4 or 8
     AND     TMP_REG, TMP_REG, 1
     ADD     INT0_CHAN34.W2, INT0_CHAN34.W2, TMP_REG.W2
 
     // Perform additional integrator stages, update channels separately
     // Stage 1 / 3
-    ADD     INT1_CHAN12.W0, INT1_CHAN12.W0, INT0_CHAN12.W0  // Channel 1
-    ADD     INT1_CHAN12.W2, INT1_CHAN12.W2, INT0_CHAN12.W2  // Channel 2
-    ADD     INT1_CHAN34.W0, INT1_CHAN34.W0, INT0_CHAN34.W0  // Channel 3
-    ADD     INT1_CHAN34.W2, INT1_CHAN34.W2, INT0_CHAN34.W2  // Channel 4
+    ADD     INT1_CHAN12.W0, INT1_CHAN12.W0, INT0_CHAN12.W0  // Channel 1 or 5
+    ADD     INT1_CHAN12.W2, INT1_CHAN12.W2, INT0_CHAN12.W2  // Channel 2 or 6
+    ADD     INT1_CHAN34.W0, INT1_CHAN34.W0, INT0_CHAN34.W0  // Channel 3 or 7
+    ADD     INT1_CHAN34.W2, INT1_CHAN34.W2, INT0_CHAN34.W2  // Channel 4 or 8
     // Stage 2 / 3
-    ADD     INT2_CHAN12.W0, INT2_CHAN12.W0, INT1_CHAN12.W0  // Channel 1
-    ADD     INT2_CHAN12.W2, INT2_CHAN12.W2, INT1_CHAN12.W2  // Channel 2
-    ADD     INT2_CHAN34.W0, INT2_CHAN34.W0, INT1_CHAN34.W0  // Channel 3
-    ADD     INT2_CHAN34.W2, INT2_CHAN34.W2, INT1_CHAN34.W2  // Channel 4
+    ADD     INT2_CHAN12.W0, INT2_CHAN12.W0, INT1_CHAN12.W0  // Channel 1 or 5
+    ADD     INT2_CHAN12.W2, INT2_CHAN12.W2, INT1_CHAN12.W2  // Channel 2 or 6
+    ADD     INT2_CHAN34.W0, INT2_CHAN34.W0, INT1_CHAN34.W0  // Channel 3 or 7
+    ADD     INT2_CHAN34.W2, INT2_CHAN34.W2, INT1_CHAN34.W2  // Channel 4 or 8
     // Stage 3 / 3
-    ADD     INT3_CHAN12.W0, INT3_CHAN12.W0, INT2_CHAN12.W0  // Channel 1
-    ADD     INT3_CHAN12.W2, INT3_CHAN12.W2, INT2_CHAN12.W2  // Channel 2
-    ADD     INT3_CHAN34.W0, INT3_CHAN34.W0, INT2_CHAN34.W0  // Channel 3
-    ADD     INT3_CHAN34.W2, INT3_CHAN34.W2, INT2_CHAN34.W2  // Channel 4
+    ADD     INT3_CHAN12.W0, INT3_CHAN12.W0, INT2_CHAN12.W0  // Channel 1 or 5
+    ADD     INT3_CHAN12.W2, INT3_CHAN12.W2, INT2_CHAN12.W2  // Channel 2 or 6
+    ADD     INT3_CHAN34.W0, INT3_CHAN34.W0, INT2_CHAN34.W0  // Channel 3 or 7
+    ADD     INT3_CHAN34.W2, INT3_CHAN34.W2, INT2_CHAN34.W2  // Channel 4 or 8
 .endm
 
 .macro combs
@@ -120,27 +120,27 @@
     // ##### 27 / 72 cycles (at 16kHz)
     // Perform comb stages, update channels separately
     // Stage 0 / 3
-    SUB     COMB0_CHAN12.W0, INT3_CHAN12.W0, LAST_INT_CHAN12.W0  // Channel 1
-    SUB     COMB0_CHAN12.W2, INT3_CHAN12.W2, LAST_INT_CHAN12.W2  // Channel 2
-    SUB     COMB0_CHAN34.W0, INT3_CHAN34.W0, LAST_INT_CHAN34.W0  // Channel 3
-    SUB     COMB0_CHAN34.W2, INT3_CHAN34.W2, LAST_INT_CHAN34.W2  // Channel 4
+    SUB     COMB0_CHAN12.W0, INT3_CHAN12.W0, LAST_INT_CHAN12.W0  // Channel 1 or 5
+    SUB     COMB0_CHAN12.W2, INT3_CHAN12.W2, LAST_INT_CHAN12.W2  // Channel 2 or 6
+    SUB     COMB0_CHAN34.W0, INT3_CHAN34.W0, LAST_INT_CHAN34.W0  // Channel 3 or 7
+    SUB     COMB0_CHAN34.W2, INT3_CHAN34.W2, LAST_INT_CHAN34.W2  // Channel 4 or 8
     // Stage 1 / 3
-    SUB     COMB1_CHAN12.W0, COMB0_CHAN12.W0, LAST_COMB0_CHAN12.W0  // Channel 1
-    SUB     COMB1_CHAN12.W2, COMB0_CHAN12.W2, LAST_COMB0_CHAN12.W2  // Channel 2
-    SUB     COMB1_CHAN34.W0, COMB0_CHAN34.W0, LAST_COMB0_CHAN34.W0  // Channel 3
-    SUB     COMB1_CHAN34.W2, COMB0_CHAN34.W2, LAST_COMB0_CHAN34.W2  // Channel 4
+    SUB     COMB1_CHAN12.W0, COMB0_CHAN12.W0, LAST_COMB0_CHAN12.W0  // Channel 1 or 5
+    SUB     COMB1_CHAN12.W2, COMB0_CHAN12.W2, LAST_COMB0_CHAN12.W2  // Channel 2 or 6
+    SUB     COMB1_CHAN34.W0, COMB0_CHAN34.W0, LAST_COMB0_CHAN34.W0  // Channel 3 or 7
+    SUB     COMB1_CHAN34.W2, COMB0_CHAN34.W2, LAST_COMB0_CHAN34.W2  // Channel 4 or 8
     // Stage 2 / 3
-    SUB     COMB2_CHAN12.W0, COMB1_CHAN12.W0, LAST_COMB1_CHAN12.W0  // Channel 1
-    SUB     COMB2_CHAN12.W2, COMB1_CHAN12.W2, LAST_COMB1_CHAN12.W2  // Channel 2
-    SUB     COMB2_CHAN34.W0, COMB1_CHAN34.W0, LAST_COMB1_CHAN34.W0  // Channel 3
-    SUB     COMB2_CHAN34.W2, COMB1_CHAN34.W2, LAST_COMB1_CHAN34.W2  // Channel 4
+    SUB     COMB2_CHAN12.W0, COMB1_CHAN12.W0, LAST_COMB1_CHAN12.W0  // Channel 1 or 5
+    SUB     COMB2_CHAN12.W2, COMB1_CHAN12.W2, LAST_COMB1_CHAN12.W2  // Channel 2 or 6
+    SUB     COMB2_CHAN34.W0, COMB1_CHAN34.W0, LAST_COMB1_CHAN34.W0  // Channel 3 or 7
+    SUB     COMB2_CHAN34.W2, COMB1_CHAN34.W2, LAST_COMB1_CHAN34.W2  // Channel 4 or 8
     // Stage 3 / 3
-    SUB     OUTPUT_CHAN12.W0, COMB2_CHAN12.W0, LAST_COMB2_CHAN12.W0  // Channel 1
-    SUB     OUTPUT_CHAN12.W2, COMB2_CHAN12.W2, LAST_COMB2_CHAN12.W2  // Channel 2
-    SUB     OUTPUT_CHAN34.W0, COMB2_CHAN34.W0, LAST_COMB2_CHAN34.W0  // Channel 3
-    SUB     OUTPUT_CHAN34.W2, COMB2_CHAN34.W2, LAST_COMB2_CHAN34.W2  // Channel 4
+    SUB     OUTPUT_CHAN12.W0, COMB2_CHAN12.W0, LAST_COMB2_CHAN12.W0  // Channel 1 or 5
+    SUB     OUTPUT_CHAN12.W2, COMB2_CHAN12.W2, LAST_COMB2_CHAN12.W2  // Channel 2 or 6
+    SUB     OUTPUT_CHAN34.W0, COMB2_CHAN34.W0, LAST_COMB2_CHAN34.W0  // Channel 3 or 7
+    SUB     OUTPUT_CHAN34.W2, COMB2_CHAN34.W2, LAST_COMB2_CHAN34.W2  // Channel 4 or 8
     // Store result in PRU0 local memory
-    // TODO: find a way to change the offset if we're on the falling edge instead of the rising edge
+    // Stores OUTPUT_CHAN12 and the next register, OUTPUT_CHAN34
     SBBO    OUTPUT_CHAN12, LOCAL_MEM, memoffset, 8
 
     // Update comb values
