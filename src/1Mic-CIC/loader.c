@@ -158,7 +158,7 @@ int main(int argc, char ** argv) {
     ret = prussdrv_exec_program(PRU_NUM1, argv[1]);
     if (ret) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
-        stop(NULL);
+        stop(output);
     	return ret;
     }
 
