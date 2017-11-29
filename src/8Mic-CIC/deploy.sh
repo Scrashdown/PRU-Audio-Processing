@@ -6,7 +6,10 @@ set -e
 echo "PWM/CLK output (BeagleBone)"
 config-pin -a P9.14 pwm
 config-pin -q P9.14
-sudo sh "../utils/PWMsetup.sh"
+
+PWM_PERIOD_NS='950'
+PWM_DUTY_CYCLE='475'
+sudo sh "../utils/PWMsetup.sh $PWM_PERIOD_NS $PWM_DUTY_CYCLE"
 
 ## DATA input pins to PRU1
 echo "DATA1 in (PRU1)"
