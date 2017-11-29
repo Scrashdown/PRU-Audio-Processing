@@ -7,8 +7,8 @@ echo "PWM/CLK output (BeagleBone)"
 config-pin -a P9.14 pwm
 config-pin -q P9.14
 
-PWM_PERIOD_NS='975'
-PWM_DUTY_CYCLE='487'
+PWM_PERIOD_NS='968'
+PWM_DUTY_CYCLE='484'
 cat "../utils/PWMsetup.sh" | sudo bash -s $PWM_PERIOD_NS $PWM_DUTY_CYCLE
 
 ## DATA input pins to PRU1
