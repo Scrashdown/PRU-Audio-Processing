@@ -163,8 +163,8 @@ start:
     // ### Setup start configuration ###
     // Set all register values to zero, except r31
     // Make sure bank 0 is also set to 0
-    ZERO    0, 124
-    XOUT    BANK0, r0, 124
+    ZERO    0, 120
+    XOUT    BANK0, r0, 120
 
     // Load local mem address in a register
     LDI     LOCAL_MEM, LOCAL_MEM_ADDR
