@@ -87,7 +87,7 @@
 
     LSR     TMP_REG, IN_PINS, DAT_OFFSET2  // Load data from channel 2 or 6
     AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN12.W2, INT0_CHAN12.W2, TMP_REG.W2
+    ADD     INT0_CHAN12.W2, INT0_CHAN12.W2, TMP_REG.W0
 
     LSR     TMP_REG, IN_PINS, DAT_OFFSET3  // Load data from channel 3 or 7
     AND     TMP_REG, TMP_REG, 1
@@ -95,7 +95,7 @@
 
     LSR     TMP_REG, IN_PINS, DAT_OFFSET4  // Load data from channel 4 or 8
     AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN34.W2, INT0_CHAN34.W2, TMP_REG.W2
+    ADD     INT0_CHAN34.W2, INT0_CHAN34.W2, TMP_REG.W0
 
     // Perform additional integrator stages, update channels separately
     // Stage 1 / 3
@@ -174,7 +174,7 @@ chan1to4:
     // Swap registers for processing channels 1 - 4
     // Store registers for chan. 5 - 8 in bank 1
     XOUT    BANK1, r0, 96
-    // Load registers for chan. 5 - 8 from bank 0
+    // Load registers for chan. 1 - 4 from bank 0
     XIN     BANK0, r0, 96
 
     // Wait for rising edge
@@ -193,7 +193,7 @@ wait_data1:
     // Integrator stages
     integrators  // 24 cycles
 
-    QBNE    chan5to8, SAMPLE_COUNTER, 64
+    QBNE    chan5to8, SAMPLE_COUNTER, R
 
     // Comb stages
     combs 0  // 25 cycles
@@ -219,7 +219,7 @@ wait_data2:
     // Integrator stages
     integrators  // 24 cycles
 
-    QBNE    chan1to4, SAMPLE_COUNTER, 64
+    QBNE    chan1to4, SAMPLE_COUNTER, R
     LDI     SAMPLE_COUNTER, 0  // Reset counter to 0 this time
 
     // Comb stages...
