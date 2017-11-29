@@ -49,21 +49,24 @@ void stop(FILE * file) {
 }
 
 
-void processing(FILE * output, uint32_t * host_buffer, volatile uint32_t * PRUmem) {
+void processing(FILE * output, volatile uint32_t * PRUmem) {
+    uint8_t host_buffer[10 * 16];
     size_t counter = 0;
     for (counter = 0; counter < 10; ++counter) {
         // Wait for PRU interrupt
-        prussdrv_pru_wait_event(PRU_EVTOUT1);
-        prussdrv_pru_clear_event(PRU_EVTOUT1, PRU1_ARM_INTERRUPT);
-
+        printf("Waiting for int...\n");
+        prussdrv_pru_wait_event(PRU_EVTOUT_1);
+        prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
+        printf("Interrupt received\n");
         // Read 16 bytes from PRU mem
         memcpy((void *) &host_buffer[16 * counter], (const void *) PRUmem, 16);
     }
 
     // Write the result to the file
-    size_t written = fwrite(host_buffer, 10, 16, output);
-    if (written != 16) {
+    size_t written = fwrite(host_buffer, 16, 10, output);
+    if (written != 10) {
         fprintf(stderr, "Error while writing to file!\n");
+        fprintf(stderr, "Written = %zu\n", written);
     }
 }
 
@@ -90,13 +93,6 @@ int main(int argc, char ** argv) {
     volatile uint32_t * PRUmem = NULL;
     setup_mmaps(&PRUmem);
 
-    uint32_t * host_buffer = (uint32_t *) malloc(10 * 16);
-    if (host_buffer == NULL) {
-        fprintf(stderr, "Error allocating memory!\n");
-        stop(NULL);
-        return -1;
-    }
-
     // Open file for output
     FILE * output = fopen("../output/16bits_8chan.pcm", "w");
     if (output == NULL) {
@@ -114,8 +110,9 @@ int main(int argc, char ** argv) {
     	return ret;
     }
 
+    printf("Processing...\n");
     // Start processing of the received data
-    processing(output, host_buffer, PRUmem);
+    processing(output, PRUmem);
     
     // Disable PRUs and the pruss driver. Also close the opened file.
     stop(output);
