@@ -48,18 +48,21 @@ void stop(FILE * file) {
 }
 
 
-void processing(FILE * output, volatile uint32_t * PRUmem) {
-    for (int i = 0; i < 10; ++i) {
+void processing(FILE * output, uint32_t * host_buffer, volatile uint32_t * PRUmem) {
+    size_t counter = 0;
+    for (counter = 0; counter < 10; ++counter) {
         // Wait for PRU interrupt
         prussdrv_pru_wait_event(PRU_EVTOUT1);
         prussdrv_pru_clear_event(PRU_EVTOUT1, PRU1_ARM_INTERRUPT);
 
-        // When we receive an interrupt, this means data for the 8 channels was written to the first 16 bytes of PRU memory
-        int written = fwrite((const void *) PRUmem, 1, 16, output);
-        if (written != 16) {
-            fprintf("Error writing file!");
-            return;
-        }
+        // Read 16 bytes from PRU mem
+        memcpy((void *) &host_buffer[16 * counter], (const void *) PRUmem, 16);
+    }
+
+    // Write the result to the file
+    size_t written = fwrite(host_buffer, 10, 16, output);
+    if (written != 16) {
+        fprintf(stderr, "Error while writing to file!\n");
     }
 }
 
@@ -86,11 +89,18 @@ int main(int argc, char ** argv) {
     volatile uint32_t * PRUmem = NULL;
     setup_mmaps(&PRUmem);
 
+    uint32_t * host_buffer = (uint32_t) malloc(10 * 16);
+    if (host_buffer == NULL) {
+        fprintf(stderr, "Error allocating memory!\n");
+        stop(NULL);
+        return -1;
+    }
+
     // Open file for output
     FILE * output = fopen("../output/16bits_8chan.pcm", "w");
     if (output == NULL) {
         fprintf(stderr, "Error! Could not open file (%d)\n", errno);
-        stop(NULL);
+        stop(output);
         return -1;
     }
 
@@ -99,7 +109,7 @@ int main(int argc, char ** argv) {
     ret = prussdrv_exec_program(PRU1, argv[1]);
     if (ret) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
-        stop(NULL);
+        stop(output);
     	return ret;
     }
 
