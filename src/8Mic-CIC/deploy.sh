@@ -9,7 +9,7 @@ config-pin -q P9.14
 
 PWM_PERIOD_NS='950'
 PWM_DUTY_CYCLE='475'
-sudo sh "../utils/PWMsetup.sh $PWM_PERIOD_NS $PWM_DUTY_CYCLE"
+cat "../utils/PWMsetup.sh" | sudo bash -s $PWM_PERIOD_NS $PWM_DUTY_CYCLE
 
 ## DATA input pins to PRU1
 echo "DATA1 in (PRU1)"
