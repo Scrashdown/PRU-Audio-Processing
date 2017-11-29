@@ -13,7 +13,6 @@ raw_u32 = np.fromfile(in_file, dtype=np.uint32, count=-1, sep='')
 raw_u32 = raw_u32[offset:]
 
 # Convert the raw data to float32 between 1.0 and -1.0
-values_range = raw_u32.max() - raw_u32.min()
 norm_f32 = np.subtract(raw_u32, (raw_u32.max() + raw_u32.min()) / 2)
 norm_f32 = np.divide(norm_f32, max(abs(norm_f32))).astype(np.float32)
 
