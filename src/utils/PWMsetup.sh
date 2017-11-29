@@ -4,8 +4,8 @@ set -e
 
 echo "Setting up BeagleBone Black PWM (CLK)"
 
-PWM_PERIOD_NS='800'
-PWM_DUTY_CYCLE='400'
+PWM_PERIOD_NS='700'
+PWM_DUTY_CYCLE='350'
 
 cd /sys/class/pwm/pwmchip3/
 # Check pwm0 does not exist, if it exists, the next command will cause an I/O error
