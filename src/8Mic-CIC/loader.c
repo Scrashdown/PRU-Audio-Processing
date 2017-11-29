@@ -48,6 +48,11 @@ void stop(FILE * file) {
 }
 
 
+void processing(FILE * output, volatile uint32_t * PRUmem) {
+
+}
+
+
 int main(int argc, char ** argv) {
     if (argc != 2) {
         printf("Usage: %s pru1.bin\n", argv[0]);
@@ -70,6 +75,14 @@ int main(int argc, char ** argv) {
     volatile uint32_t * PRUmem = NULL;
     setup_mmaps(&PRUmem);
 
+    // Open file for output
+    FILE * output = fopen("../output/16bits_8chan.pcm", "w");
+    if (output == NULL) {
+        fprintf(stderr, "Error! Could not open file (%d)\n", errno);
+        stop(NULL);
+        return -1;
+    }
+
     // Load the PRU program(s)
     printf("Loading \"%s\" program on PRU1\n", argv[1]);
     ret = prussdrv_exec_program(PRU1, argv[1]);
@@ -79,12 +92,11 @@ int main(int argc, char ** argv) {
     	return ret;
     }
 
-    // Display value in PRU memory
-    uint32_t value = PRUmem[0];
-    printf("Value in PRU memory: 0x%x\n", value);
+    // Start processing of the received data
+    processing(output, PRUmem);
     
     // Disable PRUs and the pruss driver. Also close the opened file.
-    stop(NULL);
+    stop(output);
 
     return 0;
 }
