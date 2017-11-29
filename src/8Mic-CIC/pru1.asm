@@ -1,6 +1,9 @@
 /**
  * Code for the CIC Filter on PRU0.
  * 
+ * Instruction set :
+ * http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
+ * 
  * Pseudocode :
  * 
  * Wait for rising edge...
@@ -11,13 +14,6 @@
  * 
  * */
 
-
-
-/* Instructions set and macros:
-
-http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
-
-*/
 
 #include "prudefs.hasm"
 
@@ -200,7 +196,7 @@ wait_data1:
     QBNE    chan5to8, SAMPLE_COUNTER, 64
 
     // Comb stages
-    combs(0)  // 25 cycles
+    //combs(0)  // 25 cycles
 
     // ##### Channels 5 - 8 #####
 chan5to8:
@@ -227,7 +223,7 @@ wait_data2:
     LDI     SAMPLE_COUNTER, 0  // Reset counter to 0 this time
 
     // Comb stages...
-    combs(8)  // 25 cycles
+    //combs(8)  // 25 cycles
 
     // Let the host know data is ready
     MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
