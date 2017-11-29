@@ -12,7 +12,7 @@ r1 += r0
 r2 += r1
 r3 += r2
 
-if counter % 64 == 0:
+if counter % R == 0:
     // TODO
 
 */
@@ -27,6 +27,8 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 
 // TODO: Figure out how interrupts work
 #define PRU1_ARM_INTERRUPT 20
+
+#define R 16
 
 // Input pins offsets
 #define CLK_OFFSET 11
@@ -123,7 +125,7 @@ wait_signal:
     ADD     INT3, INT3, INT2
 
     // Branch for oversampling
-    QBNE    wait_edge, SAMPLE_COUNTER, 64
+    QBNE    wait_edge, SAMPLE_COUNTER, R
 
     // Reset sample counter once we reach R
     LDI     SAMPLE_COUNTER, 0
