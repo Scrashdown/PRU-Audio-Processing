@@ -60,7 +60,7 @@
 #define DAT_OFFSET4 7
 
 // Decimation rate
-#define R 16
+#define R 13
 
 // Scratchpad register banks numbers
 #define BANK0 10
@@ -141,7 +141,9 @@
     SUB     OUTPUT_CHAN34.W2, COMB2_CHAN34.W2, LAST_COMB2_CHAN34.W2  // Channel 4 or 8
     // Store result in PRU0 local memory
     // Stores OUTPUT_CHAN12 and the next register, OUTPUT_CHAN34
+    SET_LED
     SBBO    OUTPUT_CHAN12, LOCAL_MEM, memoffset, 8
+    CLR_LED
 
     // Update comb values
     MOV     LAST_INT_CHAN12, INT3_CHAN12
