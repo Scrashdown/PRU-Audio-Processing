@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     N = 4
     M = 1
-    R = 64
+    R = 13
     fs = 1.234e6
     P, P_est, freqs_hz = P_hat(N,M,R,fs)
 
