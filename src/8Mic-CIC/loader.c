@@ -99,7 +99,7 @@ int main(int argc, char ** argv) {
 
     // Allocate host buffer for temporary storage of values
     const size_t sample_size = 16;  // 8 channels, each 2 bytes
-    const size_t sample_count = 20000;
+    const size_t sample_count = 200000;
     const uint8_t * host_buffer = (const uint8_t *) calloc(sample_count, sample_size);
     if (host_buffer == NULL) {
         fprintf(stderr, "Error allocating host buffer!\n");
