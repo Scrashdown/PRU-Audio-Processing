@@ -19,8 +19,8 @@
 #include <pruss/prussdrv.h>
 #include <pruss/pruss_intc_mapping.h>
 
-#define PRU_NUM0 0
-#define PRU_NUM1 1
+#define PRU0 0
+#define PRU1 1
 
 
 int setup_mmaps(volatile uint32_t ** pru_mem) {
@@ -28,7 +28,7 @@ int setup_mmaps(volatile uint32_t ** pru_mem) {
     volatile void * PRU_mem_void = NULL;
     // For now, store data in 32 bits chunks
     volatile uint32_t * PRU_mem = NULL;
-    int ret = prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, (void **) &PRU_mem_void);
+    int ret = prussdrv_map_prumem(PRUSS0_PRU1_DATARAM, (void **) &PRU_mem_void);
     if (ret != 0) {
         return ret;
     }
@@ -39,7 +39,7 @@ int setup_mmaps(volatile uint32_t ** pru_mem) {
 
 
 void stop(FILE * file) {
-    prussdrv_pru_disable(PRU_NUM0);
+    prussdrv_pru_disable(PRU1);
     prussdrv_exit();
 
     if (file != NULL) {
@@ -50,15 +50,15 @@ void stop(FILE * file) {
 
 int main(int argc, char ** argv) {
     if (argc != 2) {
-        printf("Usage: %s pru0.bin\n", argv[0]);
+        printf("Usage: %s pru1.bin\n", argv[0]);
         return 1;
     }
 
     // ##### Prussdrv setup #####
     prussdrv_init();
-    unsigned int ret = prussdrv_open(PRU_EVTOUT_0);
+    unsigned int ret = prussdrv_open(PRU_EVTOUT_1);
 	if (ret) {
-        fprintf(stderr, "PRU0 : prussdrv_open failed\n");
+        fprintf(stderr, "PRU1 : prussdrv_open failed\n");
         return ret;
     }
 
@@ -71,8 +71,8 @@ int main(int argc, char ** argv) {
     setup_mmaps(&PRUmem);
 
     // Load the PRU program(s)
-    printf("Loading \"%s\" program on PRU0\n", argv[1]);
-    ret = prussdrv_exec_program(PRU_NUM0, argv[1]);
+    printf("Loading \"%s\" program on PRU1\n", argv[1]);
+    ret = prussdrv_exec_program(PRU1, argv[1]);
     if (ret) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
         stop(NULL);

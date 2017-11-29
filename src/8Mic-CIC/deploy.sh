@@ -15,4 +15,4 @@ make
 
 # Start the program
 cd gen
-./loader pru0.bin
+./loader pru1.bin

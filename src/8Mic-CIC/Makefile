@@ -4,17 +4,17 @@ LDFLAGS = -lprussdrv
 
 PRU_CC = pasm
 
-all: pru0 loading
+all: pru1 loading
 
 clean:
 	-@rm gen/*
 
 # Assemble pru files and move them to the gen/ directory
-pru0: pru0.asm prudefs.hasm
+pru1: pru1.asm prudefs.hasm
 	@tput bold
-	@echo "\n----- Building PRU0 Firmware -----"
+	@echo "\n----- Building PRU1 (CIC) Firmware -----"
 	@tput sgr0
-	$(PRU_CC) -b -V3 pru0.asm
+	$(PRU_CC) -b -V3 pru1.asm
 	mv *.bin gen/
 
 # Build the loader program
