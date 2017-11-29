@@ -39,6 +39,7 @@ int setup_mmaps(volatile uint32_t ** pru_mem) {
 
 
 void stop(FILE * file) {
+    printf("Exiting program...\n");
     prussdrv_pru_disable(PRU1);
     prussdrv_exit();
 
