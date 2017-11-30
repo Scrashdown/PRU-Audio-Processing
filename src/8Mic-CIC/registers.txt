@@ -47,12 +47,12 @@ LOCAL_MEM R27
 8 channels registers :
 
 if XCHG DOES work:
-	CHAN12 -> PRU1 r0-r21
-	CHAN34 -> BANK0 r0-r21
-	CHAN56 -> BANK1 r0-r21
-	CHAN78 -> BANK2 r0-r21
+	CHAN12 -> PRU1 r1-r22
+	CHAN34 -> BANK0 r1-r22
+	CHAN56 -> BANK1 r1-r22
+	CHAN78 -> BANK2 r1-r22
 	
-	OUTPUT -> PRU1 r22-r25 (4 registers => can write 4 channels at a time!)
+	OUTPUT -> PRU1 r23-r26 (4 registers => can write 4 channels at a time!)
 	TMP_REG -> PRU1 r27
 	SAMPLE_COUNTER -> PRU1 r28
 	LOCAL_MEM -> PRU1 r29
