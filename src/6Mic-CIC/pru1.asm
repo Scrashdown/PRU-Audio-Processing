@@ -4,7 +4,10 @@
  * Instruction set :
  * http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
  * 
- * Pseudocode:
+ * Current timings:
+ * 
+ * Rising edge data : 53 cycles
+ * Falling edge data : 58 cycles
  * 
  * 
  * 
@@ -84,7 +87,7 @@
 #define CLR_LED CLR r30, r30, 0
 
 
-.macro int_comb_chan12
+.macro int_comb_chan12  // 29 cycles
 .mparam jmp_addr
     // Retrieve data for the 2 first channels and do the integrator stages
         LSR     TMP_REG, IN_PINS, DAT_OFFSET1
@@ -131,7 +134,7 @@
 .endm
 
 
-.macro int_comb_chan3
+.macro int_comb_chan3  // 18 stages
 .mparam jmp_addr, mem_offset
     // Retrieve data for channel 3
         LSR     TMP_REG, IN_PINS, DAT_OFFSET3
@@ -210,7 +213,7 @@ wait_data1:
 
 chan12:
     // Integrator and comb stages
-    int_comb_chan12 chan3
+    int_comb_chan12 chan3  // 29 cycles
 
 chan3:
     // Store channels 1 and 2 registers to BANK0
@@ -218,7 +221,7 @@ chan3:
     // Load channel 3 registers from 1st half of BANK1
     XIN     BANK1, r1, 4 * 11
     // Integrator and comb stages
-    int_comb_chan3 chan4to6, 0
+    int_comb_chan3 chan4to6, 0  // 18 cycles
         
 
     // ##### Channels 4 - 6 #####
@@ -243,7 +246,7 @@ wait_data2:
 
 chan45:
     // Integrator and comb stages
-    int_comb_chan12 chan6
+    int_comb_chan12 chan6  // 29 cycles
 
 chan6:
     // Store channels 4 and 5 registers to 2nd half of BANK1 and 1st half of BANK2
@@ -256,7 +259,7 @@ chan6:
     XIN     BANK2, r1, 4 * 11
 
     // Integrator and comb stages
-    int_comb_chan3 chan1to3, 4 * 3
+    int_comb_chan3 chan1to3, 4 * 3  // 18 cycles
 
     // If we reach this point, it means we reached R, so reset the counter
     LDI     SAMPLE_COUNTER, 0
