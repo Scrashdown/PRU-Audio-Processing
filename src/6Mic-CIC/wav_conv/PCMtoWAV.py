@@ -6,11 +6,11 @@ in_file = "../output/32bits_6chan.pcm"
 out_file = "../output/32bits_6chan.wav"
 
 # FIXME: there is currently a spike at the beginning of the recording, cut it off for now
-offset = 20000
+offset = 18000
 
 # Get the raw data to a numpy u32 array
 raw_u32 = np.fromfile(in_file, dtype=np.uint32, count=-1, sep='')[offset:]
-number_samples = int(raw_u32.shape[0] / 8)
+number_samples = int(raw_u32.shape[0] / 6)
 reshaped_arr = np.reshape(raw_u32, (number_samples, 6))
 
 first_channel = reshaped_arr[:, 0]
