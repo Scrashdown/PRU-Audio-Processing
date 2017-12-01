@@ -46,18 +46,7 @@ LOCAL_MEM R27
 
 8 channels registers :
 
-if XCHG DOES work:
-	CHAN12 -> PRU1 r1-r22
-	CHAN34 -> BANK0 r1-r22
-	CHAN56 -> BANK1 r1-r22
-	CHAN78 -> BANK2 r1-r22
-	
-	OUTPUT -> PRU1 r23-r26 (4 registers => can write 4 channels at a time!)
-	TMP_REG -> PRU1 r27
-	SAMPLE_COUNTER -> PRU1 r28
-	LOCAL_MEM -> PRU1 r29
-
-if it DOESN'T work: /!\ need to use the XIN/XOUT shift functionality which uses r0.b0 to store the shift
+XCHG doesn't work: /!\ need to use the XIN/XOUT shift functionality which uses r0.b0 to store the shift
 	CHAN12 -> BANK0 r1-r22
 	CHAN34 -> BANK1 r1-r22
 	CHAN56 -> BANK2 r1-r22
@@ -71,17 +60,7 @@ if it DOESN'T work: /!\ need to use the XIN/XOUT shift functionality which uses 
 
 6 channels registers :
 
-if XCHG DOES work:
-	CHAN12 -> PRU1 r0-r21
-	CHAN34 -> BANK0 r0-r21
-	CHAN56 -> BANK1 r0-r21
-
-	OUTPUT -> PRU1 r22-r24 (3 registers => can write 3 channels (/6) at a time!)
-	TMP_REG -> PRU1 r27
-	SAMPLE_COUNTER -> PRU1 r28
-	LOCAL_MEM -> PRU1 r29
-
-if it DOESN'T work:
+XCHG doesn't work: /!\ need to use the XIN/XOUT instructions
 	CHAN12 -> BANK0 r0-r21
 	CHAN34 -> BANK1 r0-r21
 	CHAN56 -> BANK2 r0-r21
