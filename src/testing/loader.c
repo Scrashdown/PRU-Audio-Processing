@@ -87,17 +87,17 @@ int main(int argc, char ** argv) {
     printf("PRU1 registers before XCHG:\n");
     for (size_t i = 0; i < 29; ++i) {
         uint32_t value = PRUmem[i];
-        printf("\tR%zu: %x\n", i, value);
+        printf("\tR%zu:\t0x%.8x\n", i, value);
     }
     printf("\nPRU1 registers after first XCHG:\n");
     for (size_t i = 0; i < 29; ++i) {
         uint32_t value = PRUmem[29 + i];
-        printf("\tR%zu: %x\n", i, value);
+        printf("\tR%zu:\t0x%.8x\n", i, value);
     }
     printf("\nPRU1 registers after second XCHG:\n");
     for (size_t i = 0; i < 29; ++i) {
         uint32_t value = PRUmem[2 * 29 + i];
-        printf("\tR%zu: %x\n", i, value);
+        printf("\tR%zu:\t0x%.8x\n", i, value);
     }
     
     // Disable PRUs and the pruss driver. Also close the opened file.
