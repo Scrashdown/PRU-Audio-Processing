@@ -36,7 +36,7 @@ LAST_COMB0 R16-R17
 LAST_COMB1 R18-R19
 LAST_COMB2 R20-R21
 
-total: 24 registers
+total: 22 registers
 
 OUTPUT R16-R17  (shared)
 TMP_REG R29
@@ -68,3 +68,25 @@ if it DOESN'T work: /!\ need to use the XIN/XOUT shift functionality which uses 
 	SAMPLE_COUNTER -> PRU1 r28
 	LOCAL_MEM -> PRU1 r29
 
+
+6 channels registers :
+
+if XCHG DOES work:
+	CHAN12 -> PRU1 r0-r21
+	CHAN34 -> BANK0 r0-r21
+	CHAN56 -> BANK1 r0-r21
+
+	OUTPUT -> PRU1 r22-r24 (3 registers => can write 3 channels (/6) at a time!)
+	TMP_REG -> PRU1 r27
+	SAMPLE_COUNTER -> PRU1 r28
+	LOCAL_MEM -> PRU1 r29
+
+if it DOESN'T work:
+	CHAN12 -> BANK0 r0-r21
+	CHAN34 -> BANK1 r0-r21
+	CHAN56 -> BANK2 r0-r21
+
+	OUTPUT -> PRU1 r22-r24 (3 registers => can write 3 channels (/6) at a time!)
+	TMP_REG -> PRU1 r27
+	SAMPLE_COUNTER -> PRU1 r28
+	LOCAL_MEM -> PRU1 r29
