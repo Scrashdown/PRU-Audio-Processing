@@ -21,9 +21,6 @@ config-pin -q P8.27
 echo "DATA3 in (PRU1)"
 config-pin -a P8.29 pruin
 config-pin -q P8.29
-echo "DATA4 in (PRU1)"
-config-pin -a P8.40 pruin
-config-pin -q P8.40
 ## CLK input pin to PRU1
 echo "CLK in (PRU1)"
 config-pin -a P8.30 pruin
