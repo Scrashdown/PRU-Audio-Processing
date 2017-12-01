@@ -1,52 +1,53 @@
-Registers for one channel :
+## Registers for one channel :
 
-INT0 R0
-INT1 R1
-INT2 R2
-INT3 R3
+	INT0 R0
+	INT1 R1
+	INT2 R2
+	INT3 R3
 
-COMB0 R5
-COMB1 R6
-COMB2 R7
-OUTPUT R8
+	COMB0 R5
+	COMB1 R6
+	COMB2 R7
+	OUTPUT R8
 
-LAST_INT R4
-LAST_COMB0 R9
-LAST_COMB1 R10
-LAST_COMB2 R11
+	LAST_INT R4
+	LAST_COMB0 R9
+	LAST_COMB1 R10
+	LAST_COMB2 R11
 
-TMP_REG R29
-SAMPLE_COUNTER R28
-LOCAL_MEM R27
-
-
-Registers for 2 channels :
-
-INT0 R0-R1
-INT1 R2-R3
-INT2 R4-R5
-INT3 R6-R7
-LAST_INT R8-R9
-
-COMB0 R10-R11
-COMB1 R12-R13
-COMB2 R14-R15
-
-LAST_COMB0 R16-R17
-LAST_COMB1 R18-R19
-LAST_COMB2 R20-R21
-
-total: 22 registers
-
-OUTPUT R16-R17  (shared)
-TMP_REG R29
-SAMPLE_COUNTER R28
-LOCAL_MEM R27
+	TMP_REG R29
+	SAMPLE_COUNTER R28
+	LOCAL_MEM R27
 
 
-8 channels registers :
+## Registers for 2 channels :
+
+	INT0 R0-R1
+	INT1 R2-R3
+	INT2 R4-R5
+	INT3 R6-R7
+	LAST_INT R8-R9
+
+	COMB0 R10-R11
+	COMB1 R12-R13
+	COMB2 R14-R15
+
+	LAST_COMB0 R16-R17
+	LAST_COMB1 R18-R19
+	LAST_COMB2 R20-R21
+
+	total: 22 registers
+
+	OUTPUT R16-R17  (shared)
+	TMP_REG R29
+	SAMPLE_COUNTER R28
+	LOCAL_MEM R27
+
+
+## Registers for 8 channels :
 
 XCHG doesn't work: /!\ need to use the XIN/XOUT shift functionality which uses r0.b0 to store the shift
+
 	CHAN12 -> BANK0 r1-r22
 	CHAN34 -> BANK1 r1-r22
 	CHAN56 -> BANK2 r1-r22
@@ -58,9 +59,10 @@ XCHG doesn't work: /!\ need to use the XIN/XOUT shift functionality which uses r
 	LOCAL_MEM -> PRU1 r29
 
 
-6 channels registers :
+## Registers for 6 channels :
 
 XCHG doesn't work: /!\ need to use the XIN/XOUT instructions
+
 	CHAN12 -> BANK0 r0-r21
 	CHAN34 -> BANK1 r0-r21
 	CHAN56 -> BANK2 r0-r21
