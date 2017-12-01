@@ -54,12 +54,12 @@ void processing(FILE * output, const uint8_t * host_buffer, size_t sample_count,
         // Wait for PRU interrupt
         prussdrv_pru_wait_event(PRU_EVTOUT_1);
         prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
-        // Read 16 bytes from PRU mem
-        memcpy((void *) &host_buffer[16 * counter], (const void *) PRUmem, 16);
+        // Read 6 * 4 bytes from PRUmem, because each sample holds on 1 word
+        memcpy((void *) &host_buffer[6 * 4 * counter], (const void *) PRUmem, 6 * 4);
     }
 
     // Write the result to the file
-    size_t written = fwrite(host_buffer, 16, sample_count, output);
+    size_t written = fwrite(host_buffer, 6 * 4, sample_count, output);
     if (written != sample_count) {
         fprintf(stderr, "Error while writing to file!\n");
         fprintf(stderr, "Written = %zu, expected = %zu\n", written, sample_count);
@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
     setup_mmaps(&PRUmem);
 
     // Open file for output
-    FILE * output = fopen("../output/16bits_8chan.pcm", "w");
+    FILE * output = fopen("../output/32bits_6chan.pcm", "w");
     if (output == NULL) {
         fprintf(stderr, "Error! Could not open file (%d)\n", errno);
         stop(output);
@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
     }
 
     // Allocate host buffer for temporary storage of values
-    const size_t sample_size = 16;  // 8 channels, each 2 bytes
+    const size_t sample_size = 6 * 4;  // 6 channels, each 4 bytes
     const size_t sample_count = 200000;
     const uint8_t * host_buffer = (const uint8_t *) calloc(sample_count, sample_size);
     if (host_buffer == NULL) {
