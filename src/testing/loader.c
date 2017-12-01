@@ -28,7 +28,7 @@ int setup_mmaps(volatile uint32_t ** pru_mem) {
     volatile void * PRU_mem_void = NULL;
     // For now, store data in 32 bits chunks
     volatile uint32_t * PRU_mem = NULL;
-    int ret = prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, (void **) &PRU_mem_void);
+    int ret = prussdrv_map_prumem(PRUSS0_PRU1_DATARAM, (void **) &PRU_mem_void);
     if (ret != 0) {
         return ret;
     }
@@ -39,7 +39,7 @@ int setup_mmaps(volatile uint32_t ** pru_mem) {
 
 
 void stop(FILE * file) {
-    prussdrv_pru_disable(PRU_NUM0);
+    prussdrv_pru_disable(PRU_NUM1);
     prussdrv_exit();
 
     if (file != NULL) {
@@ -50,15 +50,15 @@ void stop(FILE * file) {
 
 int main(int argc, char ** argv) {
     if (argc != 2) {
-        printf("Usage: %s pru0.bin\n", argv[0]);
+        printf("Usage: %s pru1.bin\n", argv[0]);
         return 1;
     }
 
     // ##### Prussdrv setup #####
     prussdrv_init();
-    unsigned int ret = prussdrv_open(PRU_EVTOUT_0);
+    unsigned int ret = prussdrv_open(PRU_EVTOUT_1);
 	if (ret) {
-        fprintf(stderr, "PRU0 : prussdrv_open failed\n");
+        fprintf(stderr, "PRU1 : prussdrv_open failed\n");
         return ret;
     }
 
@@ -71,17 +71,34 @@ int main(int argc, char ** argv) {
     setup_mmaps(&PRUmem);
 
     // Load the PRU program(s)
-    printf("Loading \"%s\" program on PRU0\n", argv[1]);
-    ret = prussdrv_exec_program(PRU_NUM0, argv[1]);
+    printf("Loading \"%s\" program on PRU1\n", argv[1]);
+    ret = prussdrv_exec_program(PRU_NUM1, argv[1]);
     if (ret) {
     	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
         stop(NULL);
     	return ret;
     }
 
-    // Display value in PRU memory
-    uint32_t value = PRUmem[0];
-    printf("Value in PRU memory: 0x%x\n", value);
+    // Wait for PRU interrupt...
+    prussdrv_pru_wait_event(PRU_EVTOUT_1);
+    prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
+
+    // Display memory contents.
+    printf("PRU1 registers before XCHG:\n");
+    for (size_t i = 0; i < 29; ++i) {
+        uint32_t value = PRUmem[i];
+        printf("\tR%zu: %x\n", i, value);
+    }
+    printf("\nPRU1 registers after first XCHG:\n");
+    for (size_t i = 0; i < 29; ++i) {
+        uint32_t value = PRUmem[29 + i];
+        printf("\tR%zu: %x\n", i, value);
+    }
+    printf("\nPRU1 registers after second XCHG:\n");
+    for (size_t i = 0; i < 29; ++i) {
+        uint32_t value = PRUmem[2 * 29 + i];
+        printf("\tR%zu: %x\n", i, value);
+    }
     
     // Disable PRUs and the pruss driver. Also close the opened file.
     stop(NULL);
