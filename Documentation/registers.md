@@ -61,13 +61,13 @@ XCHG doesn't work: /!\ need to use the XIN/XOUT shift functionality which uses r
 
 ## Registers for 6 channels :
 
-XCHG doesn't work: /!\ need to use the XIN/XOUT instructions
+XCHG doesn't work: /!\ need to use the XIN/XOUT instructions shift functionality which uses r0.b0 to store the shift
 
-	CHAN12 -> BANK0 r0-r21
-	CHAN34 -> BANK1 r0-r21
-	CHAN56 -> BANK2 r0-r21
+	CHAN123 -> BANK0 r0-r21 + BANK1 r0-r10
+	CHAN456 -> BANK1 r11-r21 + BANK2 r0-r21
 
-	OUTPUT -> PRU1 r22-r24 (3 registers => can write 3 channels (/6) at a time!)
+	BANK1_SHIFT -> r0.b0
+	OUTPUT -> PRU1 r23-r25 (3 registers => can write 3 channels (/6) at a time!)
 	TMP_REG -> PRU1 r27
 	SAMPLE_COUNTER -> PRU1 r28
 	LOCAL_MEM -> PRU1 r29
