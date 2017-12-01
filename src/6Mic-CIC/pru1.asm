@@ -1,58 +1,54 @@
 /**
- * Code for the CIC Filter on PRU0.
+ * Code for the CIC Filter on PRU0 with 6 channels.
  * 
  * Instruction set :
  * http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
- * 
- * Pseudocode :
- * 
- * Wait for rising edge...
- * Wait for t_dv...
- * 
- * Retrieve 4 samples
- * Run CIC filter on 4 channels
  * 
  * */
 
 
 #include "prudefs.hasm"
 
-// Register aliases
-#define INT0_CHAN12 r0
-#define INT1_CHAN12 r1
-#define INT2_CHAN12 r2
-#define INT3_CHAN12 r3
-#define LAST_INT_CHAN12 r4
+// ### Register aliases
 
-#define COMB0_CHAN12 r5
-#define COMB1_CHAN12 r6
-#define COMB2_CHAN12 r7
-#define LAST_COMB0_CHAN12 r8
-#define LAST_COMB1_CHAN12 r9
-#define LAST_COMB2_CHAN12 r10
+// Local channel data, must go in scratchpads to be preserved
+#define INT0_CHAN1 r0
+#define INT0_CHAN2 r1
+#define INT1_CHAN1 r2
+#define INT1_CHAN2 r3
+#define INT2_CHAN1 r4
+#define INT2_CHAN2 r5
+#define INT3_CHAN1 r6
+#define INT3_CHAN2 r7
 
-#define INT0_CHAN34 r11
-#define INT1_CHAN34 r12
-#define INT2_CHAN34 r13
-#define INT3_CHAN34 r14
-#define LAST_INT_CHAN34 r15
+#define LAST_INT_CHAN1 r8
+#define LAST_INT_CHAN2 r9
 
-#define COMB0_CHAN34 r16
-#define COMB1_CHAN34 r17
-#define COMB2_CHAN34 r18
-#define LAST_COMB0_CHAN34 r19
-#define LAST_COMB1_CHAN34 r20
-#define LAST_COMB2_CHAN34 r21
+#define COMB0_CHAN1 r10
+#define COMB0_CHAN2 r11
+#define COMB1_CHAN1 r12
+#define COMB1_CHAN2 r13
+#define COMB2_CHAN1 r14
+#define COMB2_CHAN2 r15
 
-#define OUTPUT_CHAN12 r22
-#define OUTPUT_CHAN34 r23
+#define LAST_COMB0_CHAN1 r16
+#define LAST_COMB0_CHAN2 r17
+#define LAST_COMB1_CHAN1 r18
+#define LAST_COMB1_CHAN2 r19
+#define LAST_COMB2_CHAN1 r20
+#define LAST_COMB2_CHAN2 r21
+
+// Channel independent data, can stay on the PRU
+#define OUTPUT1 r22
+#define OUTPUT2 r23
+#define OUTPUT3 r24
 
 #define IN_PINS r31
 #define TMP_REG r29
 #define SAMPLE_COUNTER r28
 #define LOCAL_MEM r27
 
-// Input pins offsets
+// Input pins offsets, TODO: update for 3 channels
 #define CLK_OFFSET 11
 #define DAT_OFFSET1 10
 #define DAT_OFFSET2 8
@@ -60,13 +56,13 @@
 #define DAT_OFFSET4 7
 
 // Decimation rate
-#define R 13
+#define R 16
 
 // Scratchpad register banks numbers
 #define BANK0 10
 #define BANK1 11
 #define BANK2 12
-#define PRU1_REGS 14
+#define PRU0_REGS 14
 
 // Defined in the PRU ref. guide
 #define LOCAL_MEM_ADDR 0x0
@@ -79,81 +75,12 @@
 
 // Macros for integrator and comb stages
 .macro integrators
-    // Retrieve data from input pins and perform the 4 first stages of the integrators
-    // Stage 0 / 3
-    LSR     TMP_REG, IN_PINS, DAT_OFFSET1  // Load data from channel 1 or 5
-    AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN12.W0, INT0_CHAN12.W0, TMP_REG.W0
-
-    LSR     TMP_REG, IN_PINS, DAT_OFFSET2  // Load data from channel 2 or 6
-    AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN12.W2, INT0_CHAN12.W2, TMP_REG.W0
-
-    LSR     TMP_REG, IN_PINS, DAT_OFFSET3  // Load data from channel 3 or 7
-    AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN34.W0, INT0_CHAN34.W0, TMP_REG.W0
-
-    LSR     TMP_REG, IN_PINS, DAT_OFFSET4  // Load data from channel 4 or 8
-    AND     TMP_REG, TMP_REG, 1
-    ADD     INT0_CHAN34.W2, INT0_CHAN34.W2, TMP_REG.W0
-
-    // Perform additional integrator stages, update channels separately
-    // Stage 1 / 3
-    ADD     INT1_CHAN12.W0, INT1_CHAN12.W0, INT0_CHAN12.W0  // Channel 1 or 5
-    ADD     INT1_CHAN12.W2, INT1_CHAN12.W2, INT0_CHAN12.W2  // Channel 2 or 6
-    ADD     INT1_CHAN34.W0, INT1_CHAN34.W0, INT0_CHAN34.W0  // Channel 3 or 7
-    ADD     INT1_CHAN34.W2, INT1_CHAN34.W2, INT0_CHAN34.W2  // Channel 4 or 8
-    // Stage 2 / 3
-    ADD     INT2_CHAN12.W0, INT2_CHAN12.W0, INT1_CHAN12.W0  // Channel 1 or 5
-    ADD     INT2_CHAN12.W2, INT2_CHAN12.W2, INT1_CHAN12.W2  // Channel 2 or 6
-    ADD     INT2_CHAN34.W0, INT2_CHAN34.W0, INT1_CHAN34.W0  // Channel 3 or 7
-    ADD     INT2_CHAN34.W2, INT2_CHAN34.W2, INT1_CHAN34.W2  // Channel 4 or 8
-    // Stage 3 / 3
-    ADD     INT3_CHAN12.W0, INT3_CHAN12.W0, INT2_CHAN12.W0  // Channel 1 or 5
-    ADD     INT3_CHAN12.W2, INT3_CHAN12.W2, INT2_CHAN12.W2  // Channel 2 or 6
-    ADD     INT3_CHAN34.W0, INT3_CHAN34.W0, INT2_CHAN34.W0  // Channel 3 or 7
-    ADD     INT3_CHAN34.W2, INT3_CHAN34.W2, INT2_CHAN34.W2  // Channel 4 or 8
+    
 .endm
 
 .macro combs
 .mparam memoffset
-    // ##### 27 / 72 cycles (at 16kHz)
-    // Perform comb stages, update channels separately
-    // Stage 0 / 3
-    SUB     COMB0_CHAN12.W0, INT3_CHAN12.W0, LAST_INT_CHAN12.W0  // Channel 1 or 5
-    SUB     COMB0_CHAN12.W2, INT3_CHAN12.W2, LAST_INT_CHAN12.W2  // Channel 2 or 6
-    SUB     COMB0_CHAN34.W0, INT3_CHAN34.W0, LAST_INT_CHAN34.W0  // Channel 3 or 7
-    SUB     COMB0_CHAN34.W2, INT3_CHAN34.W2, LAST_INT_CHAN34.W2  // Channel 4 or 8
-    // Stage 1 / 3
-    SUB     COMB1_CHAN12.W0, COMB0_CHAN12.W0, LAST_COMB0_CHAN12.W0  // Channel 1 or 5
-    SUB     COMB1_CHAN12.W2, COMB0_CHAN12.W2, LAST_COMB0_CHAN12.W2  // Channel 2 or 6
-    SUB     COMB1_CHAN34.W0, COMB0_CHAN34.W0, LAST_COMB0_CHAN34.W0  // Channel 3 or 7
-    SUB     COMB1_CHAN34.W2, COMB0_CHAN34.W2, LAST_COMB0_CHAN34.W2  // Channel 4 or 8
-    // Stage 2 / 3
-    SUB     COMB2_CHAN12.W0, COMB1_CHAN12.W0, LAST_COMB1_CHAN12.W0  // Channel 1 or 5
-    SUB     COMB2_CHAN12.W2, COMB1_CHAN12.W2, LAST_COMB1_CHAN12.W2  // Channel 2 or 6
-    SUB     COMB2_CHAN34.W0, COMB1_CHAN34.W0, LAST_COMB1_CHAN34.W0  // Channel 3 or 7
-    SUB     COMB2_CHAN34.W2, COMB1_CHAN34.W2, LAST_COMB1_CHAN34.W2  // Channel 4 or 8
-    // Stage 3 / 3
-    SUB     OUTPUT_CHAN12.W0, COMB2_CHAN12.W0, LAST_COMB2_CHAN12.W0  // Channel 1 or 5
-    SUB     OUTPUT_CHAN12.W2, COMB2_CHAN12.W2, LAST_COMB2_CHAN12.W2  // Channel 2 or 6
-    SUB     OUTPUT_CHAN34.W0, COMB2_CHAN34.W0, LAST_COMB2_CHAN34.W0  // Channel 3 or 7
-    SUB     OUTPUT_CHAN34.W2, COMB2_CHAN34.W2, LAST_COMB2_CHAN34.W2  // Channel 4 or 8
-    // Store result in PRU0 local memory
-    // Stores OUTPUT_CHAN12 and the next register, OUTPUT_CHAN34
-    SET_LED
-    SBBO    OUTPUT_CHAN12, LOCAL_MEM, memoffset, 8
-    CLR_LED
-
-    // Update comb values
-    MOV     LAST_INT_CHAN12, INT3_CHAN12
-    MOV     LAST_INT_CHAN34, INT3_CHAN34
-    MOV     LAST_COMB0_CHAN12, COMB0_CHAN12
-    MOV     LAST_COMB0_CHAN34, COMB0_CHAN34
-    MOV     LAST_COMB1_CHAN12, COMB1_CHAN12
-    MOV     LAST_COMB1_CHAN34, COMB1_CHAN34
-    MOV     LAST_COMB2_CHAN12, COMB2_CHAN12
-    MOV     LAST_COMB2_CHAN34, COMB2_CHAN34
+    
 .endm
 
 .origin 0
@@ -162,22 +89,25 @@
 start:
     CLR_LED
 
+    // ### Enable XIN/XOUT shift functionality ###
+    LBCO    TMP_REG, C4, 0x34, 4
+    SET     TMP_REG, TMP_REG, 1
+    SBCO    TMP_REG, C4, 0x34, 4
+
     // ### Setup start configuration ###
-    // Set all register values to zero, except r31
+    // Set all register values to zero, except r30 and r31, for all banks
     // Make sure bank 0 is also set to 0
     ZERO    0, 120
     XOUT    BANK0, r0, 120
+    XOUT    BANK1, r0, 120
+    XOUT    BANK2, r0, 120
 
     // Load local mem address in a register
     LDI     LOCAL_MEM, LOCAL_MEM_ADDR
 
     // ##### CHANNELS 1 - 4 #####
 chan1to4:
-    // Swap registers for processing channels 1 - 4
-    // Store registers for chan. 5 - 8 in bank 1
-    XOUT    BANK1, r0, 96
-    // Load registers for chan. 1 - 4 from bank 0
-    XIN     BANK0, r0, 96
+    // Swap registers
 
     // Wait for rising edge
     WBC     IN_PINS, CLK_OFFSET
