@@ -57,6 +57,7 @@
 #define TMP_REG r29
 #define SAMPLE_COUNTER r28
 #define LOCAL_MEM r27
+#define XFR_OFFSET r0.b0
 
 // Input pins offsets, TODO: update for 3 channels
 #define CLK_OFFSET 11
@@ -83,48 +84,9 @@
 #define CLR_LED CLR r30, r30, 0
 
 
-.origin 0
-.entrypoint start
-
-start:
-    CLR_LED
-
-    // ### Enable XIN/XOUT shift functionality ###
-    LBCO    TMP_REG, C4, 0x34, 4
-    SET     TMP_REG, TMP_REG, 1
-    SBCO    TMP_REG, C4, 0x34, 4
-
-    // ### Setup start configuration ###
-    // Set all register values to zero, except r30 and r31, for all banks
-    // Make sure bank 0 is also set to 0
-    ZERO    0, 120
-    XOUT    BANK0, r0, 120
-    XOUT    BANK1, r0, 120
-    XOUT    BANK2, r0, 120
-
-    // Load local mem address in a register
-    LDI     LOCAL_MEM, LOCAL_MEM_ADDR
-
-    // ##### CHANNELS 1 - 3 #####
-chan1to3:
-    // TODO: Swap registers
-
-    // Wait for rising edge
-    WBC     IN_PINS, CLK_OFFSET
-    WBS     IN_PINS, CLK_OFFSET
-
-    // Update sample counter for decimation
-    ADD     SAMPLE_COUNTER, SAMPLE_COUNTER, 1
-
-    // Wait for t_dv time, since it can be at most 125ns, we have to wait for 24 + 5 cycles
-    LDI     TMP_REG, 10
-wait_data1:
-    SUB     TMP_REG, TMP_REG, 1
-    QBNE    wait_data1, TMP_REG, 0
-
-chan12:
-    // Integrator and comb stages
-        // Retrieve data for the 2 first channels and do the integrator stages
+.macro int_comb_chan12
+.mparam jmp_addr
+    // Retrieve data for the 2 first channels and do the integrator stages
         LSR     TMP_REG, IN_PINS, DAT_OFFSET1
         AND     TMP_REG, TMP_REG, 1
         ADD     INT0_CHAN1, INT0_CHAN1, TMP_REG
@@ -143,7 +105,7 @@ chan12:
         ADD     INT3_CHAN2, INT3_CHAN2, INT2_CHAN2
 
         // Work on channel 3
-        QBNE    chan3, SAMPLE_COUNTER, R
+        QBNE    jmp_addr, SAMPLE_COUNTER, R
 
         SUB     COMB0_CHAN1, INT3_CHAN1, LAST_INT_CHAN1
         SUB     COMB0_CHAN2, INT3_CHAN2, LAST_INT_CHAN2
@@ -166,12 +128,12 @@ chan12:
         MOV     LAST_COMB1_CHAN2, COMB1_CHAN2
         MOV     LAST_COMB2_CHAN1, COMB2_CHAN1
         MOV     LAST_COMB2_CHAN2, COMB2_CHAN2
+.endm
 
-chan3:
-    // Integrator and comb stages
-        // Store channel 1 and 2 registers to BANK0
-        XOUT    BANK0, r1, 4 * 22  // TODO: here we save all registers (even the comb ones when they haven't been updated, correct ?)
-        // Retrieve data for channel 3
+
+.macro int_comb_chan3
+.mparam jmp_addr, mem_offset
+    // Retrieve data for channel 3
         LSR     TMP_REG, IN_PINS, DAT_OFFSET3
         AND     TMP_REG, TMP_REG, 1
         ADD     INT0_CHAN1, INT0_CHAN1, TMP_REG
@@ -180,32 +142,94 @@ chan3:
         ADD     INT2_CHAN1, INT2_CHAN1, INT1_CHAN1
         ADD     INT3_CHAN1, INT3_CHAN1, INT2_CHAN1
 
-        // Work on channels 4 to 6
-        QBNE    chan4to6, SAMPLE_COUNTER, R
+        // Work on the 3 other channels
+        QBNE    jmp_addr, SAMPLE_COUNTER, R
 
         SUB     COMB0_CHAN1, INT3_CHAN1, LAST_INT_CHAN1
         SUB     COMB1_CHAN1, COMB0_CHAN1, LAST_COMB0_CHAN1
         SUB     COMB2_CHAN1, COMB1_CHAN1, LAST_COMB1_CHAN1
 
         // Store the output in the PRU1 "private" output registers
-        SUB     OUTPUT3, COMB0_CHAN1, LAST_COMB2_CHAN1
+        SUB     OUTPUT3, COMB2_CHAN1, LAST_COMB2_CHAN1
 
         MOV     LAST_INT_CHAN1, INT3_CHAN1
         MOV     LAST_COMB0_CHAN1, COMB0_CHAN1
         MOV     LAST_COMB1_CHAN1, COMB1_CHAN1
         MOV     LAST_COMB2_CHAN1, COMB2_CHAN1
 
-        // Store output for channels 1-3 in memory
-        SBBO    OUTPUT1, LOCAL_MEM, 0, 4 * 3
+        // Store output for channels 1 - 3 in memory
+        SBBO    OUTPUT1, LOCAL_MEM, mem_offset, 4 * 3
+.endm
+
+
+.origin 0
+.entrypoint start
+
+start:
+    CLR_LED
+
+    // ### Enable XIN/XOUT shift functionality ###
+    LBCO    TMP_REG, C4, 0x34, 4
+    SET     TMP_REG, TMP_REG, 1
+    SBCO    TMP_REG, C4, 0x34, 4
+
+    // ### Setup start configuration ###
+    // Set all register values to zero, except r30 and r31, for all banks
+    // Make sure bank 0 is also set to 0
+    ZERO    0, 120
+    XOUT    BANK0, r0, 120
+    XOUT    BANK1, r0, 120
+    XOUT    BANK2, r0, 120
+
+    // Load local mem address in a register
+    LDI     LOCAL_MEM, LOCAL_MEM_ADDR
+
+    // Set the right offset for the beginning
+    LDI     XFR_OFFSET, 11
+
+    // ##### CHANNELS 1 - 3 #####
+chan1to3:
+    // Store channel 6 registers to 2nd half of BANK2
+    XOUT    BANK2, r1, 4 * 11
+    // Load channels 1 and 2 registers from BANK0
+    LDI     XFR_OFFSET, 0
+    XIN     BANK0, r1, 4 * 2 * 11
+
+    // Wait for rising edge
+    WBC     IN_PINS, CLK_OFFSET
+    WBS     IN_PINS, CLK_OFFSET
+
+    // Update sample counter for decimation
+    ADD     SAMPLE_COUNTER, SAMPLE_COUNTER, 1
+
+    // Wait for t_dv time, since it can be at most 125ns, we have to wait for 24 + 5 cycles
+    LDI     TMP_REG, 10
+wait_data1:
+    SUB     TMP_REG, TMP_REG, 1
+    QBNE    wait_data1, TMP_REG, 0
+
+chan12:
+    // Integrator and comb stages
+    int_comb_chan12 chan3
+
+chan3:
+    // Store channels 1 and 2 registers to BANK0
+    XOUT    BANK0, r1, 4 * 2 * 11  // TODO: here we save all registers (even the comb ones when they haven't been updated, correct ?)
+    // Load channel 3 registers from 1st half of BANK1
+    XIN     BANK1, r1, 4 * 11
+    // Integrator and comb stages
+    int_comb_chan3 chan4to6, 0
         
 
     // ##### Channels 4 - 6 #####
 chan4to6:
-    // Swap registers for processing channels 5 - 8
-    // Store registers for chan. 1 - 4 in bank 0
-    XOUT    BANK0, r0, 96  // 96B = 24 * 4B = 24 registers that we use to store data for 4 channels
-    // Load registers for chan. 5 - 8 from bank 1
-    XIN     BANK1, r0, 96  // Same idea
+    // First, store channel 3 registers in first half of BANK1
+    XOUT    BANK1, r1, 4 * 11
+
+    // Then, load channels 4 and 5 registers from 2nd half of BANK1 and 1st half of BANK2
+    XIN     BANK2, r12, 4 * 11  // chan 5
+    LDI     XFR_OFFSET, 11
+    XIN     BANK1, r1, 4 * 11  // chan 4
 
     // Wait for falling edge
     WBS     IN_PINS, CLK_OFFSET
@@ -217,14 +241,25 @@ wait_data2:
     SUB     TMP_REG, TMP_REG, 1
     QBNE    wait_data2, TMP_REG, 0
 
-    // Integrator stages
-    integrators
+chan45:
+    // Integrator and comb stages
+    int_comb_chan12 chan6
 
-    QBNE    chan1to3, SAMPLE_COUNTER, R
-    LDI     SAMPLE_COUNTER, 0  // Reset counter to 0 this time
+chan6:
+    // Store channels 4 and 5 registers to 2nd half of BANK1 and 1st half of BANK2
+    XOUT    BANK1, r1, 4 * 11
+    LDI     XFR_OFFSET, 0
+    XOUT    BANK2, r12, 4 * 11
 
-    // Comb stages...
-    combs
+    // Load channel 6 registers
+    LDI     XFR_OFFSET, 11
+    XIN     BANK2, r1, 4 * 11
+
+    // Integrator and comb stages
+    int_comb_chan3 chan1to3, 4 * 3
+
+    // If we reach this point, it means we reached R, so reset the counter
+    LDI     SAMPLE_COUNTER, 0
 
     // Let the host know data is ready
     MOV     r31.b0, PRU1_ARM_INTERRUPT + 16

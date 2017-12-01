@@ -63,8 +63,8 @@ XCHG doesn't work: /!\ need to use the XIN/XOUT shift functionality which uses r
 
 XCHG doesn't work: /!\ need to use the XIN/XOUT instructions shift functionality which uses r0.b0 to store the shift
 
-	CHAN123 -> BANK0 r0-r21 (ch.1-2) + BANK1 r0-r10 (ch.3)
-	CHAN456 -> BANK1 r11-r21 (ch.4-5) + BANK2 r0-r21 (ch.6)
+	CHAN123 -> BANK0 r1-r22 (ch.1-2) + BANK1 r1-r11 (ch.3)
+	CHAN456 -> BANK1 r12-r22 (ch.4) + BANK2 r1-r22 (ch.5-6)
 
 	BANK1_SHIFT -> r0.b0
 	OUTPUT -> PRU1 r23-r25 (3 registers => can write 3 channels (/6) at a time!)
