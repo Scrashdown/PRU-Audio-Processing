@@ -25,8 +25,8 @@ if __name__ == "__main__":
 
     N = 4
     M = 1
-    R = 13
-    fs = 1.234e6
+    R = 16
+    fs = 64 * 16e3
     P, P_est, freqs_hz = P_hat(N,M,R,fs)
 
     # convert to dB and normalize so we get attenuation
