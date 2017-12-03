@@ -85,6 +85,7 @@
 // DEBUG (assumes P8.45)
 #define SET_LED SET r30, r30, 0
 #define CLR_LED CLR r30, r30, 0
+#define TOGGLE_LED XOR r30, r30, 1
 
 
 .macro int_comb_chan12  // 29 cycles
