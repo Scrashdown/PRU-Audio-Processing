@@ -54,7 +54,7 @@ void processing(FILE * output, const uint8_t * host_buffer, size_t sample_count,
         // Wait for PRU interrupt
         prussdrv_pru_wait_event(PRU_EVTOUT_1);
         prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
-        // Read 6 * 4 bytes from PRUmem, because each sample holds on 1 word
+        // Read 6 * 4 bytes from PRUmem, because each sample holds on 4 bytes
         memcpy((void *) &host_buffer[6 * 4 * counter], (const void *) PRUmem, 6 * 4);
     }
 
@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
     setup_mmaps(&PRUmem);
 
     // Open file for output
-    FILE * output = fopen("../output/32bits_6chan.pcm", "w");
+    FILE * output = fopen("../output/32bits_6chan.pcm", "wb");
     if (output == NULL) {
         fprintf(stderr, "Error! Could not open file (%d)\n", errno);
         stop(output);
