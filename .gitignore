@@ -3,6 +3,7 @@ Captures/
 .vscode/
 *.wav
 *.pcm
+*.DS_Store
 
 */gen/*
 src/*/output/*

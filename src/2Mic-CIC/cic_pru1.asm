@@ -30,34 +30,54 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 
 // Input pins offsets
 #define CLK_OFFSET 11
-#define DATA_OFFSET 8
+#define DATA1_OFFSET 10
+#define DATA2_OFFSET 8
 
 // Register aliases
 #define IN_PINS r31
-#define SAMPLE_COUNTER r5
-#define WAIT_COUNTER r6
-#define TMP_REG r7
-#define BYTE_COUNTER r8
+#define TMP_REG r23
+#define SAMPLE_COUNTER r24
+#define WAIT_COUNTER r25
+#define BYTE_COUNTER r26
 
-#define HOST_MEM r20
+#define HOST_MEM r27
 // Host mem size is multiple of 8, this is ensured on the host side
-#define HOST_MEM_SIZE r21
-#define LOCAL_MEM r22
+#define HOST_MEM_SIZE r28
+#define LOCAL_MEM r29
 // Defined in page 19 of the AM335x PRU-ICSS Reference guide
 #define LOCAL_MEM_ADDR 0x0000
 
-#define INT0 r0
-#define INT1 r1
-#define INT2 r2
-#define INT3 r3
-#define LAST_INT r4
+// CIC parameters
+#define CIC_R 64
 
-#define COMB0 r10
-#define COMB1 r11
-#define COMB2 r12
-#define LAST_COMB0 r14
-#define LAST_COMB1 r15
-#define LAST_COMB2 r16
+// first channel data
+#define INT0 r1
+#define INT1 r2
+#define INT2 r3
+#define INT3 r4
+#define LAST_INT r5
+
+#define COMB0 r6
+#define COMB1 r7
+#define COMB2 r8
+#define LAST_COMB0 r9
+#define LAST_COMB1 r10
+#define LAST_COMB2 r11
+
+// second channel data
+#define CH_2_INT0 r12
+#define CH_2_INT1 r13
+#define CH_2_INT2 r14
+#define CH_2_INT3 r15
+#define CH_2_LAST_INT r16
+
+#define CH_2_COMB0 r17
+#define CH_2_COMB1 r18
+#define CH_2_COMB2 r19
+#define CH_2_LAST_COMB0 r20
+#define CH_2_LAST_COMB1 r21
+#define CH_2_LAST_COMB2 r22
+
 
 // DEBUG (assumes P8.45)
 #define SET_LED SET r30, r30, 0
@@ -113,7 +133,7 @@ wait_signal:
     QBNE    wait_signal, WAIT_COUNTER, 0
 
     // Retrieve data from DATA pin (only one bit!)
-    LSR     TMP_REG, IN_PINS, DATA_OFFSET
+    LSR     TMP_REG, IN_PINS, DATA1_OFFSET
     AND     TMP_REG, TMP_REG, 1
     // Do the integrator operations
     ADD     SAMPLE_COUNTER, SAMPLE_COUNTER, 1
@@ -123,7 +143,7 @@ wait_signal:
     ADD     INT3, INT3, INT2
 
     // Branch for oversampling
-    QBNE    wait_edge, SAMPLE_COUNTER, 64
+    QBNE    wait_edge, SAMPLE_COUNTER, CIC_R
 
     // Reset sample counter once we reach R
     LDI     SAMPLE_COUNTER, 0
