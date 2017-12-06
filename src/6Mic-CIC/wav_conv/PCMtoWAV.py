@@ -2,11 +2,13 @@ from scipy.io import wavfile as wf
 import numpy as np
 import matplotlib.pyplot as plt
 
+N = 4
+
 in_file = "../output/32bits_6chan.pcm"
 out_file = "../output/32bits_6chan.wav"
 
 # FIXME: there is currently a spike at the beginning of the recording, cut it off for now
-offset = 18000
+offset = N
 
 # Get the raw data to a numpy u32 array
 raw_u32 = np.fromfile(in_file, dtype=np.uint32, count=-1, sep='')[offset:]
