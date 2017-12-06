@@ -49,6 +49,7 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 
 // CIC parameters
 #define CIC_R 64
+#define CIC_offset 16777216  // 2**(N*log2(R))
 
 // first channel data
 #define INT0 r1
@@ -106,17 +107,17 @@ start:
     LDI     SAMPLE_COUNTER, 0
     LDI     BYTE_COUNTER, 0
     // Set all integrator and comb registers to 0 at first
-    LDI     INT0, 0
-    LDI     INT1, 0
-    LDI     INT2, 0
-    LDI     INT3, 0
-    LDI     COMB0, 0
-    LDI     COMB1, 0
-    LDI     COMB2, 0
-    LDI     LAST_INT, 0
-    LDI     LAST_COMB0, 0
-    LDI     LAST_COMB1, 0
-    LDI     LAST_COMB2, 0
+    LDI     INT0, CIC_offset
+    LDI     INT1, CIC_offset
+    LDI     INT2, CIC_offset
+    LDI     INT3, CIC_offset
+    LDI     COMB0, CIC_offset
+    LDI     COMB1, CIC_offset
+    LDI     COMB2, CIC_offset
+    LDI     LAST_INT, CIC_offset
+    LDI     LAST_COMB0, CIC_offset
+    LDI     LAST_COMB1, CIC_offset
+    LDI     LAST_COMB2, CIC_offset
 
 
     // ### Signal processing ###
