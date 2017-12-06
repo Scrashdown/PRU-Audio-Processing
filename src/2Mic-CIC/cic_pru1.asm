@@ -49,7 +49,7 @@ http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
 
 // CIC parameters
 #define CIC_R 64
-#define CIC_offset 16777216  // 2**(N*log2(R))
+#define CIC_offset 24  // bit to set to 1, N*log2(R)
 
 // first channel data
 #define INT0 r1
@@ -107,17 +107,30 @@ start:
     LDI     SAMPLE_COUNTER, 0
     LDI     BYTE_COUNTER, 0
     // Set all integrator and comb registers to 0 at first
-    LDI     INT0, CIC_offset
-    LDI     INT1, CIC_offset
-    LDI     INT2, CIC_offset
-    LDI     INT3, CIC_offset
-    LDI     COMB0, CIC_offset
-    LDI     COMB1, CIC_offset
-    LDI     COMB2, CIC_offset
-    LDI     LAST_INT, CIC_offset
-    LDI     LAST_COMB0, CIC_offset
-    LDI     LAST_COMB1, CIC_offset
-    LDI     LAST_COMB2, CIC_offset
+    // LDI     INT0, CIC_offset
+    // LDI     INT1, CIC_offset
+    // LDI     INT2, CIC_offset
+    // LDI     INT3, CIC_offset
+    // LDI     COMB0, CIC_offset
+    // LDI     COMB1, CIC_offset
+    // LDI     COMB2, CIC_offset
+    // LDI     LAST_INT, CIC_offset
+    // LDI     LAST_COMB0, CIC_offset
+    // LDI     LAST_COMB1, CIC_offset
+    // LDI     LAST_COMB2, CIC_offset
+
+    SET     INT0, INT0, CIC_offset
+    SET     INT1, INT1, CIC_offset
+    SET     INT2, INT2, CIC_offset
+    SET     INT3, INT3, CIC_offset
+    SET     COMB0, COMB0, CIC_offset
+    SET     COMB1, COMB1, CIC_offset
+    SET     COMB2, COMB2, CIC_offset
+    SET     LAST_INT, LAST_INT, CIC_offset
+    SET     LAST_COMB0, LAST_COMB0, CIC_offset
+    SET     LAST_COMB1, LAST_COMB1, CIC_offset
+    SET     LAST_COMB2, LAST_COMB2, CIC_offset
+
 
 
     // ### Signal processing ###
