@@ -1,6 +1,8 @@
 am335x_pru_package/
 Captures/
 .vscode/
+*.wav
+*.pcm
 
 */gen/*
 src/*/output/*
