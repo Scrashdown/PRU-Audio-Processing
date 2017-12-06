@@ -68,7 +68,7 @@ void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_l
     assert(host_mem_len % 24 == 0);
 
     // Use this to limit the number of passes we do for now
-    const int buffer_passes = 3;
+    const int buffer_passes = 20;
     const size_t nmemb = (size_t) (host_mem_len / 2);
     int buffer_side = 0;
     for (int i = 0; i < 2 * buffer_passes; ++i) {
