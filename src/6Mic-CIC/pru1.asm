@@ -1,12 +1,12 @@
 /**
- * Code for the CIC Filter on PRU0 with 6 channels.
+ * Code for the CIC Filter on PRU1 with 6 channels.
  * 
  * Instruction set :
  * http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
  * 
  * Current timings:
  * 
- * Rising edge data : 53 cycles
+ * Rising edge data : 56 cycles
  * Falling edge data : 65 cycles
  * 
  * 
@@ -186,8 +186,6 @@
 .entrypoint start
 
 start:
-    CLR_LED
-
     // ### Setup start configuration ###
     // Set all register values to zero, except r30 and r31, for all banks
     // Make sure bank 0 is also set to 0
@@ -234,11 +232,8 @@ chan1to3:
     // Update sample counter for decimation
     ADD     SAMPLE_COUNTER, SAMPLE_COUNTER, 1
 
-    // Wait for t_dv time, since it can be at most 125ns, we have to wait for 24 + 5 cycles
-    LDI     DELAY_COUNTER, 10
-wait_data1:
-    SUB     DELAY_COUNTER, DELAY_COUNTER, 1
-    QBNE    wait_data1, DELAY_COUNTER, 0
+    // Wait for t_dv time, since it can be at most 125ns, we have to wait for 24 + 1 cycles
+    delay_cycles 24
 
 chan12:
     // Integrator and comb stages
@@ -271,10 +266,7 @@ chan4to6:
     WBC     IN_PINS, CLK_OFFSET
 
     // Wait for t_dv time, since it can be at most 125ns, we have to wait for 25 cycles
-    LDI     DELAY_COUNTER, 11
-wait_data2:
-    SUB     DELAY_COUNTER, DELAY_COUNTER, 1
-    QBNE    wait_data2, DELAY_COUNTER, 0
+    delay_cycles 25
 
 chan45:
     // Integrator and comb stages
@@ -290,7 +282,6 @@ chan6:
 
     // Load channel 6 registers
     // Load BANK2's R12-R22 to PRU's R1-R11
-    LDI     XFR_OFFSET, 11
     XIN     BANK2, r1, 4 * 11
 
     // Integrator and comb stages
@@ -301,7 +292,6 @@ chan6:
     // Increment the written bytes counter since all write operations are done now
     ADD     BYTE_COUNTER, BYTE_COUNTER, 6 * 4
 
-    // TODO: make sure the host memory buffer size is a multiple of 24 * 2!
     QBNE    check_half, BYTE_COUNTER, HOST_MEM_SIZE
     // We filled the whole buffer, interrupt the host
     // TODO: we could store which buffer half has just been written, to avoid desync
