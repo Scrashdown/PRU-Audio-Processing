@@ -1,6 +1,6 @@
-# 8 Microphones on PRU1
+# 6 Microphones on PRU1
 
-Here we try to implement 8 independent channels for 8 mics, each with their own CIC filter. The 8 microphones are connected to 4 data lines connected to PRU1. 
+6 microphones with 6 channels output. Each microphone has his own separate CIC filter. The microphones are connected on 3 separate datalines.
 
 2 microphones are multiplexed on each data line using their SELECT line and an appropriate resistor. This means that one of the mics will output its data on the rising edge of the mic CLK, while the other one will output its data on the falling edge.
 
@@ -16,4 +16,3 @@ Here we try to implement 8 independent channels for 8 mics, each with their own 
 * DAT1 : P8.28
 * DAT2 : P8.27
 * DAT3 : P8.29
-* DAT4 : P8.40
