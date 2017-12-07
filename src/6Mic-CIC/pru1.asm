@@ -221,6 +221,7 @@ start:
     // ##### CHANNELS 1 - 3 #####
 chan1to3:
     // Store channel 6 registers to 2nd half of BANK2
+    // Store PRU's R1-R11 to BANK2's R12-R22
     XOUT    BANK2, r1, 4 * 11
     // Load channels 1 and 2 registers from BANK0
     LDI     XFR_OFFSET, 0
@@ -258,9 +259,12 @@ chan4to6:
     XOUT    BANK1, r1, 4 * 11
 
     // Then, load channels 4 and 5 registers from 2nd half of BANK1 and 1st half of BANK2
-    XIN     BANK2, r12, 4 * 11  // chan 5
+    // Load BANK1's R12-R22 to PRU's R1-R11
     LDI     XFR_OFFSET, 11
     XIN     BANK1, r1, 4 * 11  // chan 4
+    // Load BANK2's R1-R11 to PRU's R12-R22
+    LDI     XFR_OFFSET, 19  // Offset wrap-around
+    XIN     BANK2, r12, 4 * 11  // chan 5
 
     // Wait for falling edge
     WBS     IN_PINS, CLK_OFFSET
@@ -278,11 +282,14 @@ chan45:
 
 chan6:
     // Store channels 4 and 5 registers to 2nd half of BANK1 and 1st half of BANK2
-    XOUT    BANK1, r1, 4 * 11
-    LDI     XFR_OFFSET, 0
+    // Store PRU's R12-R22 to BANK2's R1-R22
     XOUT    BANK2, r12, 4 * 11
+    // Store PRU's R1-R11 to BANK1's R12-R22
+    LDI     XFR_OFFSET, 11
+    XOUT    BANK1, r1, 4 * 11
 
     // Load channel 6 registers
+    // Load BANK2's R12-R22 to PRU's R1-R11
     LDI     XFR_OFFSET, 11
     XIN     BANK2, r1, 4 * 11
 
