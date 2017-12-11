@@ -241,7 +241,7 @@ chan12:
 
 chan3:
     // Store channels 1 and 2 registers to BANK0
-    XOUT    BANK0, r1, 4 * 2 * 11  // TODO: here we save all registers (even the comb ones when they haven't been updated, correct ?)
+    XOUT    BANK0, r1, 4 * 2 * 11
     // Load channel 3 registers from 1st half of BANK1
     XIN     BANK1, r1, 4 * 11
     // Integrator and comb stages
