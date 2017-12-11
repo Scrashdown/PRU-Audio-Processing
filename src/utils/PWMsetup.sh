@@ -10,7 +10,7 @@ PWM_DUTY_CYCLE="$2"
 cd /sys/class/pwm/pwmchip3/
 # Check pwm0 does not exist, if it exists, the next command will cause an I/O error
 if [ ! -d 'pwm0' ]; then
-    # This will create
+    # This will create the 'pwm0' folder
     echo 0 > export
 fi
 
