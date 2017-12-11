@@ -1,4 +1,4 @@
-# PRU-Audio-Processing
+# PRU-Audio-Processing *(in progress!)*
 
 This is the repository of my bachelor's project. The project aims to run a microphone array on the BeagleBone Black, using the PRU Sub System to process the raw data from the microphones and offload it from the main ARM CPU.
 
