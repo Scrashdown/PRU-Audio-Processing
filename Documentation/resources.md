@@ -25,7 +25,7 @@ We also want to figure out the data rate of the fiter's output. To do this, we n
 
 	B_out = ceil(Nlog2(RM) + B_in)
 
-Where `B_in` is the input bit width. In our case, `B_in = 1`, so `B_out = 25`. However, the PRU's registers contain 32 bits and it is easier to write the data in chunks of which the size is a multiple of 8. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
+Where `B_in` is the input bit width. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers contain 32 bits and it is easier to write the data in chunks of which the size is a multiple of 8. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
 
 	D_out = B_out * f_s / R
 
@@ -46,7 +46,7 @@ In our case, `f_s ~= 1.02 MHz`, `R = 16` and `B_out' = 32`, which gives `D_out' 
 | **6** |   |   |   |   |    |   |
 | **8** |   |   |   |   |    |   |
 
-## Output data rate for 1 channel, given `N` and `R` (`M = 1`)
+## Output data rate (Mb / s) for 1 channel, given `N` and `R` (`M = 1`)
 
 |        |  N  |  1  |  2  |  3  |  4  |  5  |
 |---     |:---:|:---:|:---:|:---:|:---:|:---:|
