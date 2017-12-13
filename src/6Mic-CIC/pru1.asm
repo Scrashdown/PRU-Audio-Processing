@@ -176,9 +176,7 @@
         MOV     LAST_COMB2_CHAN1, COMB2_CHAN1
 
         // Store output for 3 channels in memory
-        SET_LED
         SBBO    OUTPUT1, HOST_MEM, BYTE_COUNTER, 4 * 3  // 3 + 2 = 5 cycles ??
-        CLR_LED
 .endm
 
 
