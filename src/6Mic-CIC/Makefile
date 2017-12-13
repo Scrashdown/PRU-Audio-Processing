@@ -10,7 +10,7 @@ clean:
 	-@rm gen/*
 
 # Assemble pru files and move them to the gen/ directory
-pru1: pru1.asm prudefs.hasm
+pru1: pru1.asm
 	@tput bold
 	@echo "\n----- Building PRU1 (CIC) Firmware -----"
 	@tput sgr0
