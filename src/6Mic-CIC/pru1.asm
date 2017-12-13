@@ -68,7 +68,7 @@
 #define DELAY_COUNTER r0.w2
 #define TMP r0.w2
 
-// Input pins offsets, TODO: update for 3 channels
+// Input pins offsets
 #define CLK_OFFSET 11
 #define DAT_OFFSET1 10
 #define DAT_OFFSET2 8
