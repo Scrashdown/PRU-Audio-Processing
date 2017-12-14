@@ -5,11 +5,9 @@
 
 #include <stddef.h>
 
-struct ringbuffer_t {
+typedef struct ringbuffer_t {
 
-};
-
-typedef struct ringbuffer_t ringbuffer_t;
+} ringbuffer_t;
 
 /**
  * TODO:

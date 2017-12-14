@@ -21,6 +21,8 @@
 #define PRU_NUM0 0
 #define PRU_NUM1 1
 
+#define PROGRAM_NAME "pru1.bin"
+
 
 int setup_mmaps(volatile uint32_t ** pru_mem, volatile void ** host_mem, unsigned int * host_mem_len, unsigned int * host_mem_phys_addr) {
     // Pointer into the PRU1 local data RAM, we use it to send to the PRU the host's memory physical address and length
@@ -101,22 +103,13 @@ void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_l
 }
 
 
-void stop(FILE * file) {
+void stop_program(void) {
     prussdrv_pru_disable(PRU_NUM1);
     prussdrv_exit();
-
-    if (file != NULL) {
-        fclose(file);
-    }
 }
 
 
-int main(int argc, char ** argv) {
-    if (argc != 2) {
-        printf("Usage: %s pru1.bin\n", argv[0]);
-        return 1;
-    }
-
+int load_program(volatile void ** host_buffer, size_t * host_buffer_len) {
     // ##### Prussdrv setup #####
     prussdrv_init();
     unsigned int ret = prussdrv_open(PRU_EVTOUT_1);
@@ -132,41 +125,25 @@ int main(int argc, char ** argv) {
 
     // ##### Setup memory mappings #####
     volatile uint32_t * PRU_mem = NULL;
-    volatile void * HOST_mem = NULL;
-    unsigned int HOST_mem_len = 0;
-    unsigned int HOST_mem_phys_addr = 0;
+    unsigned int host_buffer_phys_addr;
     // Setup memory maps and pass the physical address and length of the host's memory to the PRU
-    int ret_setup = setup_mmaps(&PRU_mem, &HOST_mem, &HOST_mem_len, &HOST_mem_phys_addr);
+    int ret_setup = setup_mmaps(&PRU_mem, &host_buffer, &host_buffer_len, &host_buffer_phys_addr);
     if (ret_setup != 0) {
-        stop(NULL);
+        stop_program();
         return -1;
     } else if (PRU_mem == NULL || HOST_mem == NULL) {
-        stop(NULL);
-        return -1;
-    }
-
-    // Setup output files and any stuff required for properly reading the data output from the PRU
-    FILE * output = fopen("../output/32bits_6chan.pcm", "wb");
-    if (output == NULL) {
-        fprintf(stderr, "Error! Could not open file (%d)\n", errno);
-        stop(output);
+        stop_program();
         return -1;
     }
 
     // Load the PRU program(s)
-    printf("Loading \"%s\" program on PRU1\n", argv[1]);
-    ret = prussdrv_exec_program(PRU_NUM1, argv[1]);
+    printf("Loading \"%s\" program on PRU1\n", PROGRAM_NAME);
+    ret = prussdrv_exec_program(PRU_NUM1, PROGRAM_NAME);
     if (ret) {
-    	fprintf(stderr, "ERROR: could not open %s\n", argv[1]);
-        stop(output);
+    	fprintf(stderr, "ERROR: could not open %s\n", PROGRAM_NAME);
+        stop_program();
     	return ret;
     }
-
-    // Start processing on the received data
-    processing(output, HOST_mem, HOST_mem_len);
     
-    // Disable PRUs and the pruss driver. Also close the opened file.
-    stop(output);
-
     return 0;
 }

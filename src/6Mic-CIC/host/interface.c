@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "interface.h"
 #include "ringbuffer.h"
+#include "loader.h"
 
 // TODO: change these values
 #define MIN_SAMPLE_RATE_HZ 16000
@@ -9,6 +10,7 @@
 
 #define MIN_NCHAN 1
 #define MAX_NCHAN 6
+
 
 pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
 {
@@ -33,19 +35,38 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
         return NULL;
     }
 
-    // TODO:
+    // Initialize ringbuffer, TODO: give it arguments!
     ringbuffer_t * ringbuf = ringbuf_create();
     if (ringbuf == NULL) {
         free((void *) pcm);
         return NULL;
     }
 
+    // Load CIC program on the PRU
+    volatile void * host_datain_buffer = NULL;
+    size_t host_datain_buffer_len = 0;
+    int ret = load_program(&host_datain_buffer, &host_datain_buffer_len);
+    if (ret) {
+        free((void *) pcm);
+        ringbuf_free(ringbuf);
+        return NULL;
+    }
+
     // Initialize PCM parameters
     pcm -> nchan = nchan;
     pcm -> sample_rate = sample_rate;
-    pcm -> buffer = ringbuf;
-
-    // TODO: Load CIC program on the PRU
-
+    pcm -> PRU_buffer = host_datain_buffer;
+    pcm -> PRU_buffer_len = host_datain_buffer_len;
+    pcm -> main_buffer = ringbuf;
     return pcm;
+}
+
+
+void pru_processing_close(pcm_t * pcm)
+{
+    // First disable PRU processing
+    stop_program();
+
+    // Then free the pcm ringbuffer
+    ringbuf_free(pcm -> main_buffer);
 }

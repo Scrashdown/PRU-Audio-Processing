@@ -6,16 +6,17 @@
 #include <stddef.h>
 #include "ringbuffer.h"
 
-struct pcm_t {
+typedef struct pcm_t {
     // Number of channels
     size_t nchan;
     // *Per-channel* sample rate of the PCM signal in Hz
     size_t sample_rate;
-    // The ring buffer the PCM is bound to
-    ringbuffer_t * buffer;
-};
-
-typedef struct pcm_t pcm_t;
+    // The buffer accessed by the PRU, mapped by prussdrv, and its length
+    volatile void * PRU_buffer;
+    size_t PRU_buffer_len;
+    // The ring buffer which the main place for storing data
+    ringbuffer_t * main_buffer;
+} pcm_t;
 
 /**
  * 
@@ -27,7 +28,7 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate);
  * 
  * 
  */
-int pru_processing_close(pcm_t * pcm);
+void pru_processing_close(pcm_t * pcm);
 
 /**
  * Read a given number of blocks of given size and output them to the user provided buffer.
