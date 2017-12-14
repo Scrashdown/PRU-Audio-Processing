@@ -8,18 +8,20 @@
 
 struct pcm_t {
     // Number of channels
-    size_t n_chan;
+    size_t nchan;
     // *Per-channel* sample rate of the PCM signal in Hz
     size_t sample_rate;
     // The ring buffer the PCM is bound to
     ringbuffer_t * buffer;
 };
 
+typedef struct pcm_t pcm_t;
+
 /**
  * 
  * 
  */
-int pru_processing_init(pcm_t * pcm, size_t n_chan, size_t sample_rate);
+pcm_t * pru_processing_init(size_t nchan, size_t sample_rate);
 
 /**
  * 

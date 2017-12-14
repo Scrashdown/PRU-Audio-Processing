@@ -15,7 +15,7 @@ typedef struct ringbuffer_t ringbuffer_t;
  * TODO:
  * 
  */
-ringbuffer_t * ringbuf_init();
+ringbuffer_t * ringbuf_create();
 
 /**
  * 
