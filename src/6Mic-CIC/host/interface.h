@@ -25,7 +25,7 @@ int pru_processing_init(pcm_t * pcm, size_t n_chan, size_t sample_rate);
  * 
  * 
  */
-int pru_processing_close();
+int pru_processing_close(pcm_t * pcm);
 
 /**
  * Read a given number of blocks of given size and output them to the user provided buffer.
