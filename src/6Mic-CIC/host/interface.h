@@ -34,7 +34,7 @@ void pru_processing_close(pcm_t * pcm);
  * Read a given number of blocks of given size and output them to the user provided buffer.
  * 
  */
-size_t pcm_read(pcm_t * pcm, void * buffer, size_t blocksize, size_t nblocks);
+size_t pcm_read(pcm_t * src, void * dst, size_t nchan);
 
 /**
  * 

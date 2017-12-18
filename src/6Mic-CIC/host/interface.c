@@ -11,6 +11,8 @@
 #define MIN_NCHAN 1
 #define MAX_NCHAN 6
 
+#define SUB_BUF_NB 10
+
 
 pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
 {
@@ -35,20 +37,19 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
         return NULL;
     }
 
-    // Initialize ringbuffer, TODO: give it arguments!
-    ringbuffer_t * ringbuf = ringbuf_create();
-    if (ringbuf == NULL) {
-        free((void *) pcm);
-        return NULL;
-    }
-
     // Load CIC program on the PRU
     volatile void * host_datain_buffer = NULL;
     size_t host_datain_buffer_len = 0;
     int ret = load_program(&host_datain_buffer, &host_datain_buffer_len);
     if (ret) {
         free((void *) pcm);
-        ringbuf_free(ringbuf);
+        return NULL;
+    }
+
+     // Initialize ringbuffer, TODO: give it arguments!
+    ringbuffer_t * ringbuf = ringbuf_create(host_datain_buffer_len, SUB_BUF_NB);
+    if (ringbuf == NULL) {
+        free((void *) pcm);
         return NULL;
     }
 
@@ -59,6 +60,12 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
     pcm -> PRU_buffer_len = host_datain_buffer_len;
     pcm -> main_buffer = ringbuf;
     return pcm;
+}
+
+
+size_t pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
+{
+    
 }
 
 

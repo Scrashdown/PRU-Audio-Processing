@@ -3,17 +3,24 @@
  * 
  */
 
-#include <stddef.h>
+#include <stdlib.h>
+#include <inttypes.h>
 
-typedef struct ringbuffer_t {
-
+typedef struct {
+    // Pointer to the main buffer
+    uint32_t * data;
+    // Head and tail indices
+    size_t head;
+    size_t tail;
+    // Max length of the buffer
+    size_t maxLength;
 } ringbuffer_t;
 
 /**
  * TODO:
  * 
  */
-ringbuffer_t * ringbuf_create();
+ringbuffer_t * ringbuf_create(size_t sub_buf_len, size_t sub_buf_nb);
 
 /**
  * 
@@ -31,4 +38,4 @@ int ringbuf_push_frame(const void * src, ringbuffer_t * dst);
  * Pop a given number of elemnts. TODO: decide what elements are.
  * 
  */
-size_t ringbuf_pop(const ringbuffer_t * src, void * dest, size_t nbelem);
+size_t ringbuf_pop(const ringbuffer_t * src, void * dest, size_t nsamples, size_t nchan);
