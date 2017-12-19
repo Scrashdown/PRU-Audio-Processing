@@ -23,8 +23,12 @@ typedef struct {
     unsigned int host_datain_buffer_len;
     // Buffer to which output the data
     ringbuffer_t * ringbuf;
+    // Pointer to the PCM signal itself
+    pcm_t * pcm;
     // Flag to enable/disable recording
     int recording_flag;
+    // Flag to request stopping of the thread
+    int stop_thread_flag;
     // Error status, TODO: necessary ?
     int ret;
 } processing_routine_args_t;
@@ -45,6 +49,7 @@ void *processing_routine(void * __args)
     int ret = load_program();
     if (ret) {
         // TODO: exit cleanly
+        args.ret = 1;
         pthread_exit((void *) &args);
     }
 
@@ -55,6 +60,11 @@ void *processing_routine(void * __args)
     volatile void * new_data_start;
     // Process indefinitely
     while (1) {
+        // Check if the thread has to terminate
+        if (args.stop_thread_flag) {
+            args.ret = 0;
+            pthread_exit((void *) &args);
+        }
         // Wait for PRU interrupt
         prussdrv_pru_wait_event(PRU_EVTOUT_1);
         prussdrv_pru_clear_event(PRU_EVTOUT_1);
@@ -114,12 +124,20 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
         free((void *) pcm);
         return NULL;
     }
+
+    // Initialize PCM parameters
+    pcm -> nchan = nchan;
+    pcm -> sample_rate = sample_rate;
+    pcm -> PRU_buffer = host_datain_buffer;
+    pcm -> PRU_buffer_len = host_datain_buffer_len;
+    pcm -> main_buffer = ringbuf;
     
     // Start processing in a separate thread!
     // TODO: May need to pass arguments to the new thread.
     args = {
         .host_datain_buffer = host_datain_buffer,
         .host_datain_buffer_len = host_datain_buffer_len,
+        .pcm = pcm,
         .recording_flag = 0, // Do not output to ringbuffer at first
         .ringbuf = ringbuf,
         .ret = 0 };
@@ -132,12 +150,6 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
 
     // TODO: maybe wait for some time until the ringbuffer has some samples
 
-    // Initialize PCM parameters
-    pcm -> nchan = nchan;
-    pcm -> sample_rate = sample_rate;
-    pcm -> PRU_buffer = host_datain_buffer;
-    pcm -> PRU_buffer_len = host_datain_buffer_len;
-    pcm -> main_buffer = ringbuf;
     return pcm;
 }
 
@@ -171,9 +183,10 @@ void disable_recording()
 
 void pru_processing_close(pcm_t * pcm)
 {
-    // First disable PRU processing
+    // Stop PRU processing thread
+    args.stop_thread_flag = 1;
+    // Disable PRU processing
     stop_program();
-
     // Then free the pcm ringbuffer
     ringbuf_free(pcm -> main_buffer);
 }
