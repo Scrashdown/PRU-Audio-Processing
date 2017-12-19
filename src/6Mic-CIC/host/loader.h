@@ -1,10 +1,17 @@
 #include <stddef.h>
 
+
 /**
  * 
  * 
  */
-int load_program(volatile void ** host_buffer, size_t * host_buffer_len);
+int PRU_proc_init(volatile void ** HOST_PRU_buf, unsigned int HOST_PRU_buf_len);
+
+/**
+ * 
+ * 
+ */
+int load_program(void);
 
 /**
  * 

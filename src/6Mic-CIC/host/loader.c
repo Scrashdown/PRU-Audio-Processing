@@ -65,51 +65,13 @@ int setup_mmaps(volatile uint32_t ** pru_mem, volatile void ** host_mem, unsigne
 }
 
 
-void processing(FILE * output, volatile void * host_mem, unsigned int host_mem_len) {
-    // Make sure the size is indeed a multiple of 24
-    assert(host_mem_len % 24 == 0);
-
-    // Use this to limit the number of passes we do for now
-    const int buffer_passes = 20;
-    const size_t nmemb = (size_t) (host_mem_len / 2);
-    int buffer_side = 0;
-    for (int i = 0; i < 2 * buffer_passes; ++i) {
-        // Wait for interrupt from PRU1
-        printf("Waiting for PRU interrupt...\n");
-        prussdrv_pru_wait_event(PRU_EVTOUT_1);
-        prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
-        // Initialize arguments for fwrite accordingly to the buffer we're writing to
-        volatile void * ptr;
-        if (buffer_side == 0) {
-            printf("Received interrupt for buffer side 0\n");
-            ptr = host_mem;
-            buffer_side = 1;
-        }
-        else {
-            printf("Received interrupt for buffer side 1\n");
-            ptr = host_mem + host_mem_len / 2;
-            buffer_side = 0;
-        }
-
-        // Write the data to the file from the buffer
-        const size_t written = fwrite((const void *) ptr, 1, nmemb, output);
-        if (written == nmemb) {
-            printf("%zu bytes written to file.\n", written);
-        }
-        else {
-            fprintf(stderr, "Error! Could not write to file (%d: %s)\n", errno, strerror(errno));
-        }
-    }
-}
-
-
 void stop_program(void) {
     prussdrv_pru_disable(PRU_NUM1);
     prussdrv_exit();
 }
 
 
-int load_program(volatile void ** host_buffer, size_t * host_buffer_len) {
+int PRU_proc_init(volatile void ** buf, unsigned int * buf_len) {
     // ##### Prussdrv setup #####
     prussdrv_init();
     unsigned int ret = prussdrv_open(PRU_EVTOUT_1);
@@ -118,16 +80,15 @@ int load_program(volatile void ** host_buffer, size_t * host_buffer_len) {
         return ret;
     }
 
-
     // Initialize interrupts or smth like that
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
     prussdrv_pruintc_init(&pruss_intc_initdata);
 
     // ##### Setup memory mappings #####
     volatile uint32_t * PRU_mem = NULL;
-    unsigned int host_buffer_phys_addr;
+    unsigned int buf_phys_addr;
     // Setup memory maps and pass the physical address and length of the host's memory to the PRU
-    int ret_setup = setup_mmaps(&PRU_mem, &host_buffer, &host_buffer_len, &host_buffer_phys_addr);
+    int ret_setup = setup_mmaps(&PRU_mem, buf, buf_len, &buf_phys_addr);
     if (ret_setup != 0) {
         stop_program();
         return -1;
@@ -136,9 +97,14 @@ int load_program(volatile void ** host_buffer, size_t * host_buffer_len) {
         return -1;
     }
 
+    return 0;
+}
+
+
+int load_program(void) {
     // Load the PRU program(s)
     printf("Loading \"%s\" program on PRU1\n", PROGRAM_NAME);
-    ret = prussdrv_exec_program(PRU_NUM1, PROGRAM_NAME);
+    int ret = prussdrv_exec_program(PRU_NUM1, PROGRAM_NAME);
     if (ret) {
     	fprintf(stderr, "ERROR: could not open %s\n", PROGRAM_NAME);
         stop_program();
