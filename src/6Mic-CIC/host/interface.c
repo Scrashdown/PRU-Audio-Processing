@@ -25,17 +25,20 @@ typedef struct {
     ringbuffer_t * ringbuf;
     // Pointer to the PCM signal itself
     pcm_t * pcm;
+    // TODO: function pointer to an optional filter
+
     // Flag to enable/disable recording
     int recording_flag;
     // Flag to request stopping of the thread
     int stop_thread_flag;
-    // Error status, TODO: necessary ?
+    // Error status
     int ret;
 } processing_routine_args_t;
 
 
 // Global variables for threads
 pthread_t PRU_thread;
+pthread_attr_t PRU_thread_attr;
 
 // Arguments for the PRU audio processing thread
 processing_routine_args_t args;
@@ -45,26 +48,18 @@ processing_routine_args_t args;
 // Also takes care of starting the program.
 void *processing_routine(void * __args)
 {
+    // Make sure the size of the PRU buffer is a multiple of 48 as expected
+    int buffer_side = 0;
+    volatile void * new_data_start;
     // Load program
-    int ret = load_program();
-    if (ret) {
+    if (load_program()) {
         // TODO: exit cleanly
         args.ret = 1;
         pthread_exit((void *) &args);
     }
 
-    // Make sure the size of the PRU buffer is a multiple of 48 as expected
-    assert(args.host_datain_buffer_len % 48 == 0);
-
-    int buffer_side = 0;
-    volatile void * new_data_start;
     // Process indefinitely
     while (1) {
-        // Check if the thread has to terminate
-        if (args.stop_thread_flag) {
-            args.ret = 0;
-            pthread_exit((void *) &args);
-        }
         // Wait for PRU interrupt
         prussdrv_pru_wait_event(PRU_EVTOUT_1);
         prussdrv_pru_clear_event(PRU_EVTOUT_1);
@@ -80,6 +75,12 @@ void *processing_routine(void * __args)
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
             // TODO:
+        }
+
+        // Check if the thread has to terminate
+        if (args.stop_thread_flag) {
+            args.ret = 0;
+            pthread_exit((void *) &args);
         }
     }
 }
@@ -112,8 +113,7 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
     // Initialize memory mappings to get PRU buffer address and length
     volatile void * host_datain_buffer;
     unsigned int host_datain_buffer_len;
-    int ret = PRU_proc_init(&host_datain_buffer, &host_datain_buffer_len);
-    if (ret) {
+    if (PRU_proc_init(&host_datain_buffer, &host_datain_buffer_len)) {
         free((void *) pcm);
         return NULL;
     }
@@ -131,9 +131,16 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
     pcm -> PRU_buffer = host_datain_buffer;
     pcm -> PRU_buffer_len = host_datain_buffer_len;
     pcm -> main_buffer = ringbuf;
+
+    // Initialize thread parameters
+    if (pthread_attr_init(&PRU_thread_attr) || pthread_attr_setschedparam(&PRU_thread_attr, SCHED_RR)) {
+        fprintf(stderr, "Error! Could not create thread attribute.\n");
+        ringbuf_free(ringbuf);
+        free((void *) pcm);
+        return NULL;
+    }
     
     // Start processing in a separate thread!
-    // TODO: May need to pass arguments to the new thread.
     args = {
         .host_datain_buffer = host_datain_buffer,
         .host_datain_buffer_len = host_datain_buffer_len,
@@ -141,8 +148,9 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
         .recording_flag = 0, // Do not output to ringbuffer at first
         .ringbuf = ringbuf,
         .ret = 0 };
-    ret = pthread_create(&PRU_thread, NULL, processing_routine, NULL);
-    if (ret) {
+    if (pthread_create(&PRU_thread, NULL, processing_routine, NULL)) {
+        fprintf(stderr, "Error! Audio capture thread could not be created.\n");
+        pthread_attr_destroy(&PRU_thread_attr);
         ringbuf_free(ringbuf);
         free((void *) pcm);
         return NULL;
