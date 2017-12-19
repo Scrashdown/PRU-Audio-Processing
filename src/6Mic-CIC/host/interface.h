@@ -16,6 +16,8 @@ typedef struct pcm_t {
     size_t PRU_buffer_len;
     // The ring buffer which the main place for storing data
     ringbuffer_t * main_buffer;
+    // Function pointer to an optional filter
+    // TODO:
 } pcm_t;
 
 /**
@@ -34,7 +36,7 @@ void pru_processing_close(pcm_t * pcm);
  * Read a given number of blocks of given size and output them to the user provided buffer.
  * 
  */
-size_t pcm_read(pcm_t * src, void * dst, size_t nchan);
+int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan);
 
 /**
  * 
