@@ -29,13 +29,13 @@ ringbuffer_t * ringbuf_create(size_t sub_buf_len, size_t sub_buf_nb);
 void ringbuf_free(ringbuffer_t * ringbuf);
 
 /**
- * Push one frame (= 1 half PRU buffer) to the buffer.
+ * Push one byte
  * 
  */
-int ringbuf_push_frame(const void * src, ringbuffer_t * dst);
+int ringbuf_push_data(ringbuffer_t * dst, uint8_t data);
 
 /**
  * Pop a given number of elemnts. TODO: decide what elements are.
  * 
  */
-int ringbuf_pop(const ringbuffer_t * src, uint8_t * data);
+int ringbuf_pop(ringbuffer_t * src, uint8_t * data);
