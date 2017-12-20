@@ -34,7 +34,7 @@ ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
 }
 
 
-int ringbuf_push(ringbuffer_t * dst, uint8_t data)
+size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t length)
 {
     // Next is where the head pointer will point after writing one byte
     size_t next = (dst -> head + 1) % (dst -> maxLength);
@@ -50,7 +50,7 @@ int ringbuf_push(ringbuffer_t * dst, uint8_t data)
 }
 
 
-int ringbuf_pop(ringbuffer_t * src, uint8_t * data)
+size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t length)
 {
      // If the head isn't ahead of the tail, nothing to read
      // TODO: could implement blocking functionality
