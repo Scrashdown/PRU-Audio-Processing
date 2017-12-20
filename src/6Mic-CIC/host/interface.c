@@ -37,6 +37,7 @@ typedef struct {
 // Global variables for threads
 pthread_t PRU_thread;
 pthread_attr_t PRU_thread_attr;
+pthread_mutex_t ringbuf_mutex = PTHREAD_MUTEX_INITIALIZER;
 processing_routine_args_t args;
 
 
@@ -69,7 +70,9 @@ void *processing_routine(void * __args)
 
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
-            // TODO:
+            pthread_mutex_lock(&ringbuf_mutex);
+            // TODO: write data to the ringbuffer
+            pthread_mutex_unlock(&ringbuf_mutex);
         }
 
         // Check if the thread has to terminate
@@ -165,7 +168,9 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
         return -1;
     }
 
-    // TODO:
+    pthread_mutex_lock(&ringbuf_mutex);
+    // TODO: read data to the ringbuffer
+    pthread_mutex_unlock(&ringbuf_mutex);
 
     return 0;
 }
