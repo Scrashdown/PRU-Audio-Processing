@@ -301,7 +301,7 @@ check_half:
     LSR     HOST_MEM_SIZE, HOST_MEM_SIZE, 1
     QBNE    continue, BYTE_COUNTER, HOST_MEM_SIZE
     // Interrupt the host to tell him we wrote to half of the buffer
-    MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
+    MOV     r31.b0, PRU1_ARM_INTERRUPT + 15
 continue:
     LSL     HOST_MEM_SIZE, HOST_MEM_SIZE, 1
 

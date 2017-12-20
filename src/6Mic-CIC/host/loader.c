@@ -74,10 +74,9 @@ void stop_program(void) {
 int PRU_proc_init(volatile void ** buf, unsigned int * buf_len) {
     // ##### Prussdrv setup #####
     prussdrv_init();
-    unsigned int ret = prussdrv_open(PRU_EVTOUT_1);
-	if (ret) {
+	if (prussdrv_open(PRU_EVTOUT_0) || prussdrv_open(PRU_EVTOUT_1)) {
         fprintf(stderr, "PRU1 : prussdrv_open failed\n");
-        return ret;
+        return -1;
     }
 
     // Initialize interrupts or smth like that
