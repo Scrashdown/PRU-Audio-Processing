@@ -51,7 +51,6 @@ void *processing_routine(void * __args)
     // Load program
     if (load_program()) {
         // Disable PRU processing
-        stop_program();
         pthread_exit((void *) &args);
     }
 
@@ -71,8 +70,13 @@ void *processing_routine(void * __args)
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
             pthread_mutex_lock(&ringbuf_mutex);
-            // TODO: write data to the ringbuffer
+            // Write data to the ringbuffer
+            size_t written = ringbuf_push(args.ringbuf, (uint8_t *) args.host_datain_buffer, (size_t) args.host_datain_buffer_len);
             pthread_mutex_unlock(&ringbuf_mutex);
+
+            if (written != (size_t) args.host_datain_buffer) {
+                // TODO: Output a warning of some sort
+            }
         }
 
         // Check if the thread has to terminate
@@ -168,9 +172,15 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
         return -1;
     }
 
+    size_t byte_length = nsamples * nchan * 4;
     pthread_mutex_lock(&ringbuf_mutex);
-    // TODO: read data to the ringbuffer
+    // Read data to the ringbuffer
+    size_t read = ringbuf_pop(args.ringbuf, (uint8_t *) dst, byte_length);
     pthread_mutex_unlock(&ringbuf_mutex);
+
+    if (read != byte_length) {
+        // TODO: Output a warning of some sort
+    }
 
     return 0;
 }
