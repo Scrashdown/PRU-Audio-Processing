@@ -14,6 +14,7 @@ typedef struct {
     size_t tail;
     // Max length of the buffer
     size_t maxLength;
+    
 } ringbuffer_t;
 
 /**
@@ -32,7 +33,7 @@ void ringbuf_free(ringbuffer_t * ringbuf);
  * Push one byte
  * 
  */
-int ringbuf_push_data(ringbuffer_t * dst, uint8_t data);
+int ringbuf_push(ringbuffer_t * dst, uint8_t data);
 
 /**
  * Pop a given number of elemnts. TODO: decide what elements are.

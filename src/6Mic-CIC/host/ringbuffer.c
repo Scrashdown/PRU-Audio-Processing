@@ -34,7 +34,7 @@ ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
 }
 
 
-int ringbuf_push_data(ringbuffer_t * dst, uint8_t data)
+int ringbuf_push(ringbuffer_t * dst, uint8_t data)
 {
     // Next is where the head pointer will point after writing one byte
     size_t next = (dst -> head + 1) % (dst -> maxLength);
