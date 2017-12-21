@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <string.h> // For memcpy
 #include "ringbuffer.h"
 
 ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
@@ -36,17 +37,22 @@ ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
 
 size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t length)
 {
-    // Next is where the head pointer will point after writing one byte
-    size_t next = (dst -> head + 1) % (dst -> maxLength);
-
-    // Check if the buffer and return an error if it is
-    if (next == dst -> tail) {
-        return -1;
+    // Get the distance between the tail and head pointers, and check we aren't trying to push too much data.
+    size_t free_bytes;
+    if (dst -> head >= dst -> tail) {
+        free_bytes = dst -> maxLength - dst -> head + dst -> tail;
+    } else {
+        free_bytes = dst -> tail - dst -> head;
     }
 
-    dst -> data[dst -> head] = data;
-    dst -> head = next;
-    return 0;
+    // Write only the maximum amount of data possible without overwriting.
+    size_t to_write = length > free_bytes ? free_bytes : length;
+    memcpy(&(dst -> data[dst -> head]), (const void *) data, to_write);
+
+    // Adjust head pointer
+    dst -> head += to_write;
+    dst -> head %= dst -> maxLength;
+    return to_write;
 }
 
 
