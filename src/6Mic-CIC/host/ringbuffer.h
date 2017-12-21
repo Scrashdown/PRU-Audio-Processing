@@ -35,10 +35,10 @@ void ringbuf_free(ringbuffer_t * ringbuf);
  * Push one byte
  * 
  */
-size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t length);
+size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_t block_count);
 
 /**
  * Pop a given number of elemnts. TODO: decide what elements are.
  * 
  */
-size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t length);
+size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t block_count);

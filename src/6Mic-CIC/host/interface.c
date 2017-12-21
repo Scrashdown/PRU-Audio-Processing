@@ -69,9 +69,11 @@ void *processing_routine(void * __args)
 
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
+            size_t block_size = 4 * (args.pcm -> nchan);
+            size_t block_count = (size_t) args.host_datain_buffer_len / block_size;
             pthread_mutex_lock(&ringbuf_mutex);
             // Write data to the ringbuffer
-            size_t written = ringbuf_push(args.ringbuf, (uint8_t *) args.host_datain_buffer, (size_t) args.host_datain_buffer_len);
+            size_t written = ringbuf_push(args.ringbuf, (uint8_t *) args.host_datain_buffer, block_size, block_count);
             pthread_mutex_unlock(&ringbuf_mutex);
 
             if (written != (size_t) args.host_datain_buffer) {

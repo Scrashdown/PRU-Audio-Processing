@@ -34,8 +34,8 @@ ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
     return ringbuf;
 }
 
-
-size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t length)
+// TODO: need to make sure we do not partially write a set of samples (6 * 4 bytes) in case of an overflow
+size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_t block_count)
 {
     // Get the distance between the tail and head pointers, and check we aren't trying to push too much data.
     size_t free_bytes;
@@ -46,7 +46,10 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t length)
     }
 
     // Write only the maximum amount of data possible without overwriting.
-    size_t to_write = length > free_bytes ? free_bytes : length;
+    size_t to_write = (block_size * block_count) > free_bytes ? free_bytes : (block_size * block_count);
+    // Trim to_write to make sure we do not partially write a set of samples
+    to_write /= block_size;
+    // Copy the data
     memcpy(&(dst -> data[dst -> head]), (const void *) data, to_write);
 
     // Adjust head pointer
@@ -56,7 +59,7 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t length)
 }
 
 
-size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t length)
+size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t block_count)
 {
      // If the head isn't ahead of the tail, nothing to read
      // TODO: could implement blocking functionality
