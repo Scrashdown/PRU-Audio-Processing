@@ -69,7 +69,7 @@ void *processing_routine(void * __args)
 
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
-            size_t block_size = 4 * (args.pcm -> nchan);
+            size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
             size_t block_count = (size_t) args.host_datain_buffer_len / block_size;
             pthread_mutex_lock(&ringbuf_mutex);
             // Write data to the ringbuffer
@@ -167,7 +167,6 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
     return pcm;
 }
 
-// TODO: rework
 int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 {
     // First check that the number of channels selected is valid
@@ -175,16 +174,31 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
         return -1;
     }
 
-    size_t byte_length = nsamples * nchan * 4;
+    // Extract raw data to temporary buffer
+    size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
+    // TODO: use stack or heap for this ?
+    uint8_t * raw_data = (uint8_t *) calloc(nsamples, block_size);
+    if (raw_data == NULL) {
+        return -1;
+    }
+
     pthread_mutex_lock(&ringbuf_mutex);
-    // Read data to the ringbuffer
-    size_t read = ringbuf_pop(args.ringbuf, (uint8_t *) dst, byte_length);
+    // Read data from the ringbuffer
+    size_t read = ringbuf_pop(args.ringbuf, raw_data, block_size, nsamples);
     pthread_mutex_unlock(&ringbuf_mutex);
 
-    if (read != byte_length) {
-        // TODO: Output a warning of some sort
+    if (read != block_size * nsamples) {
         fprintf(stderr, "Warning! Buffer overflow, some samples could not be read.\n");
     }
+
+    // Extract only the channels we are interested in, and apply some filter
+    uint8_t * dst_bytes = (uint8_t *) dst;
+    for (size_t s = 0; s < read / block_size; s++) {
+        // Only extract the first n channels
+        memcpy((void *) &dst_bytes[SAMPLE_SIZE_BYTES * nchan * s], (const void *) &raw_data[block_size * s], SAMPLE_SIZE_BYTES * nchan);
+    }
+
+    // TODO: filter
 
     return 0;
 }
