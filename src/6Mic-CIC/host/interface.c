@@ -76,6 +76,7 @@ void *processing_routine(void * __args)
 
             if (written != (size_t) args.host_datain_buffer) {
                 // TODO: Output a warning of some sort
+                fprintf(stderr, "Warning! Buffer overflow, some samples could not be written.\n");
             }
         }
 
@@ -180,6 +181,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 
     if (read != byte_length) {
         // TODO: Output a warning of some sort
+        fprintf(stderr, "Warning! Buffer overflow, some samples could not be read.\n");
     }
 
     return 0;
