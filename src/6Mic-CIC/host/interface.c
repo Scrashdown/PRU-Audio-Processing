@@ -200,6 +200,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 
     // TODO: filter
 
+    free(raw_data);
     return 0;
 }
 
