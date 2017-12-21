@@ -47,8 +47,8 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
 
     // Write only the maximum amount of data possible without overwriting.
     size_t to_write = (block_size * block_count) > free_bytes ? free_bytes : (block_size * block_count);
-    // Trim to_write to make sure we do not partially write a set of samples
-    to_write /= block_size;
+    // Trim to_write to make sure we do not partially write a set of samples in case of an overflow
+    to_write -= to_write % block_size;
     // Copy the data
     memcpy(&(dst -> data[dst -> head]), (const void *) data, to_write);
 
