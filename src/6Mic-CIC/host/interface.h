@@ -42,7 +42,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan);
  * 
  * 
  */
-int enable_recording();
+void enable_recording();
 
 /**
  * 

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include "interface.h"
-#include "ringbuffer.h"
 #include "loader.h"
 
 // TODO: change these values
@@ -45,14 +45,15 @@ processing_routine_args_t args;
 // Also takes care of starting the program.
 void *processing_routine(void * __args)
 {
-    // Make sure the size of the PRU buffer is a multiple of 48 as expected
-    int next_evt = PRU_EVTOUT_0;
-    volatile void * new_data_start;
     // Load program
     if (load_program()) {
         // Disable PRU processing
         pthread_exit((void *) &args);
     }
+
+    // Make sure the size of the PRU buffer is a multiple of 48 as expected
+    int next_evt = PRU_EVTOUT_0;
+    volatile void * new_data_start;
 
     // Process indefinitely
     while (1) {
@@ -73,7 +74,7 @@ void *processing_routine(void * __args)
             size_t block_count = (size_t) args.host_datain_buffer_len / block_size;
             pthread_mutex_lock(&ringbuf_mutex);
             // Write data to the ringbuffer
-            size_t written = ringbuf_push(args.ringbuf, (uint8_t *) args.host_datain_buffer, block_size, block_count);
+            size_t written = ringbuf_push(args.ringbuf, (uint8_t *) new_data_start, block_size, block_count);
             pthread_mutex_unlock(&ringbuf_mutex);
 
             if (written != (size_t) args.host_datain_buffer) {
@@ -138,20 +139,20 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
     pcm -> PRU_buffer_len = host_datain_buffer_len;
     pcm -> main_buffer = ringbuf;
 
-    args = {
-        .host_datain_buffer = host_datain_buffer,
-        .host_datain_buffer_len = host_datain_buffer_len,
-        .pcm = pcm,
-        .recording_flag = 0, // Do not output to ringbuffer at first
-        .ringbuf = ringbuf };
+    args.host_datain_buffer = host_datain_buffer;
+    args.host_datain_buffer_len = host_datain_buffer_len;
+    args.pcm = pcm;
+    args.recording_flag = 0; // Do not output to ringbuffer at first
+    args.ringbuf = ringbuf;
 
     // Initialize thread parameters
+    /*
     if (pthread_attr_init(&PRU_thread_attr) || pthread_attr_setschedparam(&PRU_thread_attr, SCHED_RR)) {
         fprintf(stderr, "Error! Could not create thread attribute.\n");
         ringbuf_free(ringbuf);
         free((void *) pcm);
         return NULL;
-    }
+    }*/
     
     // Start processing in a separate thread!
     if (pthread_create(&PRU_thread, &PRU_thread_attr, processing_routine, NULL)) {
@@ -206,7 +207,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 
 
 // Enable writing the PRU samples to the ringbuffer
-int enable_recording()
+void enable_recording()
 {
     args.recording_flag = 1;
 }

@@ -39,4 +39,4 @@ make
 
 # Start the program
 cd gen
-./loader pru1.bin
+./main pru1.bin

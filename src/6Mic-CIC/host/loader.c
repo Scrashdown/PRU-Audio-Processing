@@ -15,8 +15,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <pruss/prussdrv.h>
-#include <pruss/pruss_intc_mapping.h>
+
+#include "loader.h"
 
 #define PRU_NUM0 0
 #define PRU_NUM1 1
@@ -91,7 +91,7 @@ int PRU_proc_init(volatile void ** buf, unsigned int * buf_len) {
     if (ret_setup != 0) {
         stop_program();
         return -1;
-    } else if (PRU_mem == NULL || HOST_mem == NULL) {
+    } else if (PRU_mem == NULL || buf == NULL) {
         stop_program();
         return -1;
     }

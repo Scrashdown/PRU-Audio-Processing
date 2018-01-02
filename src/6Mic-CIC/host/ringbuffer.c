@@ -72,7 +72,7 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
     // Read only the maximum amount of data possible without underflow.
     size_t to_read = (block_size * block_count) > available_bytes ? available_bytes : (block_size * block_count);
     // Copy the data
-    memcpy((const void *) data, &(src -> data[src -> tail]), to_read);
+    memcpy(data, &(src -> data[src -> tail]), to_read);
 
     // Adjust tail pointer
     src -> tail += to_read;
