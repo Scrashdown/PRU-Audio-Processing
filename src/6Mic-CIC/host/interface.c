@@ -177,7 +177,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 {
     // First check that the number of channels selected is valid
     if (nchan > src -> nchan) {
-        return -1;
+        return 0;
     }
 
     // Extract raw data to temporary buffer
@@ -185,7 +185,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     // TODO: use stack or heap for this ?
     uint8_t * raw_data = calloc(nsamples, block_size);
     if (raw_data == NULL) {
-        return -1;
+        return 0;
     }
 
     pthread_mutex_lock(&ringbuf_mutex);
@@ -194,7 +194,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     pthread_mutex_unlock(&ringbuf_mutex);
 
     if (read != block_size * nsamples) {
-        fprintf(stderr, "Warning! Buffer overflow, some samples could not be read.\n");
+        fprintf(stderr, "Warning! Buffer underflow, some samples could not be read.\n");
     }
 
     // Extract only the channels we are interested in, and apply some filter
@@ -207,7 +207,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     // TODO: filter
 
     free(raw_data);
-    return 0;
+    return read;
 }
 
 
