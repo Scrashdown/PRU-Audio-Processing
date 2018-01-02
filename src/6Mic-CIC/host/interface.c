@@ -48,7 +48,7 @@ void *processing_routine(void * __args)
     // Load program
     if (load_program()) {
         // Disable PRU processing
-        pthread_exit((void *) &args);
+        pthread_exit(&args);
     }
 
     // Make sure the size of the PRU buffer is a multiple of 48 as expected
@@ -71,7 +71,7 @@ void *processing_routine(void * __args)
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
             size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
-            size_t block_count = (size_t) args.host_datain_buffer_len / block_size;
+            size_t block_count = args.host_datain_buffer_len / block_size;
             pthread_mutex_lock(&ringbuf_mutex);
             // Write data to the ringbuffer
             size_t written = ringbuf_push(args.ringbuf, (uint8_t *) new_data_start, block_size, block_count);
@@ -94,9 +94,10 @@ void *processing_routine(void * __args)
 
 
 // TODO: add the possibility of adding a filter between the PRU buffer and and the main buffer
-pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
+pcm_t * pru_processing_init(void)
 {
     // Check if number of channels makes sense
+    /*
     if (nchan < MIN_NCHAN || nchan > MAX_NCHAN) {
         fprintf(stderr, "Error! Number of channels must between 1 and 6 (included), actual = %zu\n", nchan);
         return NULL;
@@ -108,10 +109,10 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
             "Error! Sample rate in Hz must be between %zu and %zu (included), actual = %zu\n", 
             MIN_SAMPLE_RATE_HZ, MAX_SAMPLE_RATE_HZ, sample_rate);
         return NULL;
-    }
+    }*/
 
     // Allocate memory for the PCM
-    pcm_t * pcm = (pcm_t *) calloc(1, sizeof(pcm_t));
+    pcm_t * pcm = calloc(1, sizeof(pcm_t));
     if (pcm == NULL) {
         fprintf(stderr, "Error! Memory for pcm could not be allocated.\n");
         return NULL;
@@ -121,20 +122,24 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
     volatile void * host_datain_buffer;
     unsigned int host_datain_buffer_len;
     if (PRU_proc_init(&host_datain_buffer, &host_datain_buffer_len)) {
-        free((void *) pcm);
+        free(pcm);
         return NULL;
     }
 
     // Initialize ringbuffer
     ringbuffer_t * ringbuf = ringbuf_create(host_datain_buffer_len, SUB_BUF_NB);
     if (ringbuf == NULL) {
-        free((void *) pcm);
+        free(pcm);
         return NULL;
     }
 
     // Initialize PCM parameters
-    pcm -> nchan = nchan;
-    pcm -> sample_rate = sample_rate;
+    /* TODO: For now, we have a fixed number of channels and sample rate on the PRU. This could be changed in the future.
+    However, for now because it is fixed, it makes no sense to allow the user to set these. */
+    //pcm -> nchan = nchan;
+    //pcm -> sample_rate = sample_rate;
+    pcm -> nchan = 6;
+    pcm -> sample_rate = 64000;
     pcm -> PRU_buffer = host_datain_buffer;
     pcm -> PRU_buffer_len = host_datain_buffer_len;
     pcm -> main_buffer = ringbuf;
@@ -159,7 +164,7 @@ pcm_t * pru_processing_init(size_t nchan, size_t sample_rate)
         fprintf(stderr, "Error! Audio capture thread could not be created.\n");
         pthread_attr_destroy(&PRU_thread_attr);
         ringbuf_free(ringbuf);
-        free((void *) pcm);
+        free(pcm);
         return NULL;
     }
 
@@ -178,7 +183,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     // Extract raw data to temporary buffer
     size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
     // TODO: use stack or heap for this ?
-    uint8_t * raw_data = (uint8_t *) calloc(nsamples, block_size);
+    uint8_t * raw_data = calloc(nsamples, block_size);
     if (raw_data == NULL) {
         return -1;
     }
@@ -196,7 +201,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     uint8_t * dst_bytes = (uint8_t *) dst;
     for (size_t s = 0; s < read / block_size; s++) {
         // Only extract the first n channels
-        memcpy((void *) &dst_bytes[SAMPLE_SIZE_BYTES * nchan * s], (const void *) &raw_data[block_size * s], SAMPLE_SIZE_BYTES * nchan);
+        memcpy(&dst_bytes[SAMPLE_SIZE_BYTES * nchan * s], &raw_data[block_size * s], SAMPLE_SIZE_BYTES * nchan);
     }
 
     // TODO: filter
@@ -207,14 +212,14 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 
 
 // Enable writing the PRU samples to the ringbuffer
-void enable_recording()
+void enable_recording(void)
 {
     args.recording_flag = 1;
 }
 
 
 // Disable writing the PRU samples to the ringbuffer
-void disable_recording()
+void disable_recording(void)
 {
     args.recording_flag = 0;
 }

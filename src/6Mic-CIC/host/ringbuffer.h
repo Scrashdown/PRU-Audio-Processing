@@ -1,5 +1,5 @@
 /**
- * Ringbuffer of buffers, each of a constant size.
+ * @brief Simple implementation of a single-threaded ringbuffer/queue.
  * 
  */
 
@@ -8,7 +8,7 @@
 
 typedef struct {
     // Pointer to the main buffer
-    uint32_t * data;
+    uint8_t * data;
     // Head and tail indices
     size_t head;
     size_t tail;
@@ -18,27 +18,41 @@ typedef struct {
 } ringbuffer_t;
 
 /**
+ * @brief Create a new ringbuffer containing the given number of blocks of given length.
  * 
- * 
+ * @param nelem Number of blocks.
+ * @param blocksize Block size.
+ * @return ringbuffer_t* A pointer to a new ringbuffer in case of success, NULL otherwise.
  */
-ringbuffer_t * ringbuf_create(size_t sub_buf_len, size_t sub_buf_nb);
+ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize);
 
 /**
+ * @brief Free the resources allocated for the given ringbuffer.
  * 
- * 
+ * @param ringbuf The ringbuffer to free.
  */
 void ringbuf_free(ringbuffer_t * ringbuf);
 
 // TODO: return the number of samples actually written/read
 
 /**
- * Push one byte
+ * @brief Push data to the ringbuffer.
  * 
+ * @param dst The ringbuffer to which data must be pushed.
+ * @param data The data to push.
+ * @param block_size The size of each block of data.
+ * @param block_count The number of blocks to push.
+ * @return size_t The number of blocks effectively written.
  */
 size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_t block_count);
 
 /**
- * Pop a given number of elemnts. TODO: decide what elements are.
+ * @brief Pop data from the ringbuffer.
  * 
+ * @param src The ringbuffer from which data must be popped.
+ * @param data The buffer to which output the data. Has to be large enough.
+ * @param block_size The size of each block of data.
+ * @param block_count The number of blocks to push.
+ * @return size_t The number of blocks effectively read.
  */
 size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t block_count);

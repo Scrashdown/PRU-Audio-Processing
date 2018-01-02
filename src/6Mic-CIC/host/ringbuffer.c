@@ -11,14 +11,14 @@
 ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
 {
     // First, allocate memory for the structure itself
-    ringbuffer_t * ringbuf = (ringbuffer_t *) calloc(1, sizeof(ringbuffer_t));
+    ringbuffer_t * ringbuf = calloc(1, sizeof(ringbuffer_t));
     if (ringbuf == NULL) {
         fprintf(stderr, "Error! Could not allocate memory for ringbuffer.\n");
         return NULL;
     }
 
     // Then allocate memory for the data buffer of the ring buffer
-    uint32_t * data = (uint32_t *) calloc(nelem, blocksize);
+    uint8_t * data = calloc(nelem, blocksize);
     if (data == NULL) {
         fprintf(stderr, "Error! Could not allocate memory for ringbuffer's data buffer.\n");
         free(ringbuf);
@@ -50,12 +50,12 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
     // Trim to_write to make sure we do not partially write a set of samples in case of an overflow
     to_write -= to_write % block_size;
     // Copy the data
-    memcpy(&(dst -> data[dst -> head]), (const void *) data, to_write);
+    memcpy(&(dst -> data[dst -> head]), data, to_write);
 
     // Adjust head pointer
     dst -> head += to_write;
     dst -> head %= dst -> maxLength;
-    return to_write;
+    return to_write / block_size;
 }
 
 
@@ -77,7 +77,7 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
     // Adjust tail pointer
     src -> tail += to_read;
     src -> tail %= src -> maxLength;
-    return  to_read;
+    return to_read;
 }
 
 
