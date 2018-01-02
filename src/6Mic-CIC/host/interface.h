@@ -39,11 +39,11 @@ void pru_processing_close(pcm_t * pcm);
 /**
  * @brief Read a given number of blocks of given size and output them to the user provided buffer.
  * 
- * @param src 
- * @param dst 
- * @param nsamples 
- * @param nchan 
- * @return int 
+ * @param src The source pcm from which to read.
+ * @param dst The buffer to which we want to write data.
+ * @param nsamples The number of samples to read from each channel.
+ * @param nchan The number of channels to read.
+ * @return int The number of samples effectively written.
  */
 int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan);
 
