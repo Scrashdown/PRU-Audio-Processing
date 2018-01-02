@@ -3,8 +3,9 @@
  * 
  */
 
-#include <stddef.h>
 #include "ringbuffer.h"
+#include "loader.h"
+
 
 typedef struct pcm_t {
     // Number of channels

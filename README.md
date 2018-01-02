@@ -1,6 +1,58 @@
 # PRU-Audio-Processing *(in progress!)*
 
-This is the repository of my bachelor's project. The project aims to run a microphone array on the BeagleBone Black, using the PRU Sub System to process the raw data from the microphones and offload it from the main ARM CPU.
+This is the repository of my bachelor's project. The project aims to run a microphone array on the BeagleBone Black, using the PRU Sub System to process the raw data from the microphones and offload it from the main ARM CPU. We also aim to provide an C API around the core audio processing core.
+
+## Interface
+
+The C interface is written in the `interface.h` and `interface.c` files. It is currently very simple and provides the following functions :
+
+    ```C
+    /**
+    * @brief Initialize PRU processing. Must be called before any other function of this file.
+    * 
+    * @return pcm_t* A pointer to a new pcm object in case of success, NULL otherwise.
+    */
+    //pcm_t * pru_processing_init(size_t nchan, size_t sample_rate);
+    pcm_t * pru_processing_init(void);
+
+    /**
+    * @brief Stop processing and free/close all resources.
+    * 
+    * @param pcm The pcm object containing the resources.
+    */
+    void pru_processing_close(pcm_t * pcm);
+    
+    /**
+    * @brief Read a given number of blocks of given size and output them to the user provided buffer.
+    * 
+    * @param src 
+    * @param dst 
+    * @param nsamples 
+    * @param nchan 
+    * @return int 
+    */
+    int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan);
+
+    /**
+    * @brief Enable recording of the audio to the ringbuffer.
+    * 
+    * Once this function is called, the interface will start copying
+    * from the buffer the PRU writes to, to the main ringbuffer of the interface. In order to avoid
+    * a ringbuffer overflow, the user must therefore start reading using pcm_read quickly after this
+    * function had been called.
+    * 
+    */
+    void enable_recording(void);
+
+    /**
+    * @brief Disable recording of the audio to the ringbuffer.
+    * 
+    * Once this function is called, the interface will stop copying data to the main ringbuffer.
+    * This means only the samples remaining in the ringbuffer after this function was called can be read.
+    * 
+    */
+    void disable_recording(void);
+    ```
 
 ## Setup
 
