@@ -77,7 +77,7 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
     // Adjust tail pointer
     src -> tail += to_read;
     src -> tail %= src -> maxLength;
-    return to_read;
+    return to_read / block_size;
 }
 
 

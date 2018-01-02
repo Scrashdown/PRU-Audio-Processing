@@ -35,6 +35,7 @@ int main(void) {
     enable_recording();
         while (counter < 256000) {
             nanosleep(&delay, NULL);
+            printf("Counter = %i\n", counter);
             counter += pcm_read(pcm, tmp_buffer, 4, 6);
         }
     disable_recording();
