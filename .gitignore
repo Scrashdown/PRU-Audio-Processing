@@ -2,7 +2,8 @@ am335x_pru_package/
 Captures/
 .vscode/
 
-*/gen/*
+*/gen/
 src/*/output/*
 *.bin
 loader
+main
