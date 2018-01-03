@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 #include "ringbuffer.h"
 
 
@@ -15,6 +16,7 @@ int main(void) {
         fprintf(stderr, "\nERROR: ringbuffer could not be created for test.\n");
         return 1;
     }
+
     const size_t length = ringbuf_len(ringbuf);
     if (length == 0) {
         printf("Success!\n");
@@ -87,6 +89,9 @@ int main(void) {
         printf("Failure! Expected %zu blocks to be written but found %zu.\n", nelem, written);
     }
 
+    ringbuf_free(ringbuf);
+    return 1;
+
     printf("TEST: Pushing some data to a full buffer causes an overflow: ");
     written = ringbuf_push(ringbuf, data2, blocksize, 1);
     if (written == 0) {
@@ -103,5 +108,14 @@ int main(void) {
         printf("Failure! Expected %zu to be written but found %zu.\n", 0, written);
     }
 
+    ringbuf_free(ringbuf);
+    printf("TEST\n");
+
+    printf("TEST: Pushing and popping data to a huge buffer does not corrupt it: ");
+    ringbuffer_t * huge_buffer = ringbuf_create(232144, 10);
+    if (huge_buffer == NULL) {
+        fprintf(stderr, "\nERROR: ringbuffer could not be created for test.\n");
+    }
+    
     return 0;
 }
