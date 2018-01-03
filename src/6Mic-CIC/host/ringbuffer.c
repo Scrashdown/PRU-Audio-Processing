@@ -30,6 +30,7 @@ ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
     ringbuf -> head = 0;
     ringbuf -> tail = 0;
     ringbuf -> maxLength = nelem * blocksize;
+    ringbuf -> is_full = 0;
 
     return ringbuf;
 }
@@ -37,6 +38,10 @@ ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
 
 size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_t block_count)
 {
+    if (dst -> is_full) {
+        return 0;
+    }
+
     // Get the distance between the tail and head pointers, and check we aren't trying to push too much data.
     size_t free_bytes;
     if (dst -> head >= dst -> tail) {
@@ -55,6 +60,7 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
     // Adjust head pointer
     dst -> head += to_write;
     dst -> head %= dst -> maxLength;
+    dst -> is_full = dst -> head == dst -> tail ? 1 : 0;
     return to_write / block_size;
 }
 
@@ -63,7 +69,9 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
 {
     // Get the distance between the tail and head pointers, check we aren't trying to pop too much data.
     size_t available_bytes;
-    if (src -> head >= src -> tail) {
+    if ((src -> head == src -> tail) && src -> is_full) {
+        available_bytes = src -> maxLength;
+    } else if (src -> head >= src -> tail) {
         available_bytes = (src -> head) - (src -> tail);
     } else {
         available_bytes = (src -> maxLength) - (src -> tail) + (src -> head);
@@ -71,12 +79,15 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
 
     // Read only the maximum amount of data possible without underflow.
     size_t to_read = (block_size * block_count) > available_bytes ? available_bytes : (block_size * block_count);
+    // Trim to_read to make sure we do not partially pop some block which would cause misalignment.
+    to_read -= to_read % block_size;
     // Copy the data
     memcpy(data, &(src -> data[src -> tail]), to_read);
 
     // Adjust tail pointer
     src -> tail += to_read;
     src -> tail %= src -> maxLength;
+    src -> is_full = src -> is_full && !to_read;
     return to_read / block_size;
 }
 
@@ -88,4 +99,21 @@ void ringbuf_free(ringbuffer_t * ringbuf)
     
     // Then free the data allocated for the ringbuffer itself
     free(ringbuf);
+}
+
+
+size_t ringbuf_len(ringbuffer_t * buf)
+{
+    if (buf -> is_full) {
+        return buf -> maxLength;
+    }
+    
+    size_t head = buf -> head;
+    size_t tail = buf -> tail;
+
+    if (head >= tail) {
+        return head - tail;
+    } else {
+        return head + (buf -> maxLength - tail);
+    }
 }

@@ -14,7 +14,9 @@ typedef struct {
     size_t tail;
     // Max length of the buffer
     size_t maxLength;
-
+    // Flag for checking if the buffer is full
+    // Needed because if the buffer is full or empty, the head and tail indexes will be the same
+    int is_full;
 } ringbuffer_t;
 
 /**
@@ -56,3 +58,11 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
  * @return size_t The number of blocks effectively read.
  */
 size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t block_count);
+
+/**
+ * @brief Get the length of a ringbuffer.
+ * 
+ * @param buf The ringbuffer of which we seek the length.
+ * @return size_t The length of the ringbuffer. 0 if empty, buf -> maxLength if it is full.
+ */
+size_t ringbuf_len(ringbuffer_t * buf);
