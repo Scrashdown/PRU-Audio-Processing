@@ -4,8 +4,8 @@
 #include "interface.h"
 
 #define OUTFILE "../output/interface.pcm"
-#define NSAMPLES 125
-#define NCHANNELS 1
+#define NSAMPLES 16000
+#define NCHANNELS 6
 
 int main(void) {
     printf("\nStarting testing program!\n");
@@ -32,7 +32,7 @@ int main(void) {
         return 1;
     }
 
-    struct timespec delay = { 2, 0 };
+    struct timespec delay = { 4, 0 };
     printf("Length of the ringbuffer before recording: %zu (maxLength = %zu)\n", ringbuf_len(pcm -> main_buffer), pcm -> main_buffer -> maxLength);
     enable_recording();
         nanosleep(&delay, NULL);
