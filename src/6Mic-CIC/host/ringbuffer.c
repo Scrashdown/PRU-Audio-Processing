@@ -55,6 +55,7 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
     // Trim to_write to make sure we do not partially write a set of samples in case of an overflow
     to_write -= to_write % block_size;
     // Copy the data
+    // TODO: DO NOT COPY EVERYTHING AT ONCE, we might need to copy in 2 parts if we have to loop back to the beginning of the actual buffer in memory
     memcpy(&(dst -> data[dst -> head]), data, to_write);
 
     // Adjust head pointer
@@ -82,6 +83,7 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
     // Trim to_read to make sure we do not partially pop some block which would cause misalignment.
     to_read -= to_read % block_size;
     // Copy the data
+    // TODO: DO NOT COPY EVERYTHING AT ONCE, we might need to copy in 2 parts if we have to loop back to the beginning of the actual buffer in memory
     memcpy(data, &(src -> data[src -> tail]), to_read);
 
     // Adjust tail pointer
@@ -96,7 +98,6 @@ void ringbuf_free(ringbuffer_t * ringbuf)
 {
     // First free the ringbuffer's data buffer
     free(ringbuf -> data);
-    
     // Then free the data allocated for the ringbuffer itself
     free(ringbuf);
 }
