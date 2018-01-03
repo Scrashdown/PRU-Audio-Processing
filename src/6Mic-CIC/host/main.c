@@ -4,7 +4,7 @@
 #include "interface.h"
 
 #define OUTFILE "../output/interface.pcm"
-#define NSAMPLES 16000
+#define NSAMPLES 64000
 #define NCHANNELS 6
 
 int main(void) {
