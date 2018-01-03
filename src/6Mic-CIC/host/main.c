@@ -4,6 +4,8 @@
 #include "interface.h"
 
 #define OUTFILE "../output/interface.pcm"
+#define NSAMPLES 10
+#define NCHANNELS 6
 
 int main(void) {
     printf("\nStarting testing program!\n");
@@ -15,7 +17,7 @@ int main(void) {
         return 1;
     }
 
-    void * tmp_buffer = calloc(6 * 4, 256000);
+    void * tmp_buffer = calloc(NCHANNELS * 4, NSAMPLES);
     if (tmp_buffer == NULL) {
         fprintf(stderr, "Error: Could not allocate enough memory for the testing buffer.\n");
         fclose(outfile);
@@ -30,19 +32,18 @@ int main(void) {
         return 1;
     }
 
-    int counter = 0;
-    struct timespec delay = { 0, 62500 };
+    struct timespec delay = { 2, 0 };
+    printf("Length of the ringbuffer before recording: %zu (maxLength = %zu)\n", ringbuf_len(pcm -> main_buffer), pcm -> main_buffer -> maxLength);
     enable_recording();
-        while (counter < 256000) {
-            nanosleep(&delay, NULL);
-            printf("Counter = %i\n", counter);
-            counter += pcm_read(pcm, tmp_buffer, 4, 6);
-        }
+        nanosleep(&delay, NULL);
     disable_recording();
+    printf("Length of the ringbuffer after recording: %zu (maxLength = %zu)\n", ringbuf_len(pcm -> main_buffer), pcm -> main_buffer -> maxLength);
+
+    pcm_read(pcm, tmp_buffer, NSAMPLES, NCHANNELS);
     pru_processing_close(pcm);
 
     printf("Outputting the results to the pcm file...\n");
-    fwrite(tmp_buffer, 6 * 4, 256000, outfile);
+    fwrite(tmp_buffer, NCHANNELS * 4, NSAMPLES, outfile);
 
     printf("Closing PRU processing...\n");
     fclose(outfile);
