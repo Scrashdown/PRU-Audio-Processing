@@ -14,8 +14,6 @@
 
 #define SUB_BUF_NB 50
 
-#define SAMPLE_SIZE_BYTES 4
-
 typedef struct {
     // Virtual address of the buffer the PRU writes to
     volatile void * host_datain_buffer;
@@ -181,6 +179,7 @@ pcm_t * pru_processing_init(void)
     return pcm;
 }
 
+
 int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 {
     // First check that the number of channels selected is valid
@@ -209,8 +208,8 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 
     // Extract only the channels we are interested in, and apply some filter
     uint8_t * dst_bytes = (uint8_t *) dst;
-    for (size_t s = 0; s < read / block_size; s++) {
-        // Only extract the first n channels
+    for (size_t s = 0; s < read; ++s) {
+        // Only extract the first nchan channels
         memcpy(&dst_bytes[SAMPLE_SIZE_BYTES * nchan * s], &raw_data[block_size * s], SAMPLE_SIZE_BYTES * nchan);
     }
 

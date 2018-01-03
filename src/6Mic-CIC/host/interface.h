@@ -6,6 +6,7 @@
 #include "ringbuffer.h"
 #include "loader.h"
 
+#define SAMPLE_SIZE_BYTES 4
 
 typedef struct pcm_t {
     // Number of channels
