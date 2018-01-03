@@ -4,8 +4,8 @@
 #include "interface.h"
 
 #define OUTFILE "../output/interface.pcm"
-#define NSAMPLES 10
-#define NCHANNELS 6
+#define NSAMPLES 125
+#define NCHANNELS 1
 
 int main(void) {
     printf("\nStarting testing program!\n");
@@ -17,7 +17,7 @@ int main(void) {
         return 1;
     }
 
-    void * tmp_buffer = calloc(NCHANNELS * 4, NSAMPLES);
+    void * tmp_buffer = calloc(NSAMPLES, NCHANNELS * SAMPLE_SIZE_BYTES);
     if (tmp_buffer == NULL) {
         fprintf(stderr, "Error: Could not allocate enough memory for the testing buffer.\n");
         fclose(outfile);
@@ -43,7 +43,7 @@ int main(void) {
     pru_processing_close(pcm);
 
     printf("Outputting the results to the pcm file...\n");
-    fwrite(tmp_buffer, NCHANNELS * 4, NSAMPLES, outfile);
+    fwrite(tmp_buffer, NCHANNELS * SAMPLE_SIZE_BYTES, NSAMPLES, outfile);
 
     printf("Closing PRU processing...\n");
     fclose(outfile);
