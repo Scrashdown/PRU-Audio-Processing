@@ -8,7 +8,7 @@
 #include <string.h> // For memcpy
 #include "ringbuffer.h"
 
-ringbuffer_t * ringbuf_create(size_t nelem, size_t blocksize)
+ringbuffer_t * ringbuf_create(size_t blocksize, size_t nelem)
 {
     // First, allocate memory for the structure itself
     ringbuffer_t * ringbuf = calloc(1, sizeof(ringbuffer_t));
