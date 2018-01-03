@@ -12,7 +12,7 @@
 #define MIN_NCHAN 1
 #define MAX_NCHAN 6
 
-#define SUB_BUF_NB 10
+#define SUB_BUF_NB 50
 
 #define SAMPLE_SIZE_BYTES 4
 
@@ -70,6 +70,14 @@ void *processing_routine(void * __args)
 
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
+            // DEBUG
+            printf("    PRUSSDRV buffer data sample:\n");
+            printf("    ");
+            for (size_t i = 0; i < 16; ++i) {
+                printf("%" PRIu32 " ", ((uint32_t *) new_data_start)[i]);
+            }
+            printf("\n");
+
             size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
             size_t block_count = args.host_datain_buffer_len / block_size;
             pthread_mutex_lock(&ringbuf_mutex);
@@ -77,7 +85,7 @@ void *processing_routine(void * __args)
             size_t written = ringbuf_push(args.ringbuf, (uint8_t *) new_data_start, block_size, block_count);
             pthread_mutex_unlock(&ringbuf_mutex);
 
-            if (written != (size_t) args.host_datain_buffer) {
+            if (written != block_count) {
                 // TODO: Output a warning of some sort
                 fprintf(stderr, "Warning! Buffer overflow, some samples could not be written.\n");
             }
@@ -177,6 +185,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 {
     // First check that the number of channels selected is valid
     if (nchan > src -> nchan) {
+        fprintf(stderr, "Error! Specified number of channels is greater than the pcm number of channels.\n");
         return 0;
     }
 
@@ -185,6 +194,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     // TODO: use stack or heap for this ?
     uint8_t * raw_data = calloc(nsamples, block_size);
     if (raw_data == NULL) {
+        fprintf(stderr, "Error! Could not allocate temporary buffer for raw data.\n");
         return 0;
     }
 
@@ -193,8 +203,8 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     size_t read = ringbuf_pop(args.ringbuf, raw_data, block_size, nsamples);
     pthread_mutex_unlock(&ringbuf_mutex);
 
-    if (read != block_size * nsamples) {
-        fprintf(stderr, "Warning! Buffer underflow, some samples could not be read.\n");
+    if (read != nsamples) {
+        fprintf(stderr, "Warning! Buffer underflow, some samples could not be read. Expected: %zu, actual: %zu\n", nsamples, read);
     }
 
     // Extract only the channels we are interested in, and apply some filter
