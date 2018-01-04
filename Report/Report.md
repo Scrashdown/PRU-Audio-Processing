@@ -2,7 +2,7 @@
 
 ## Introduction / Motivation
 
-The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to make it easily usable as simple C library. The input signals come from 6 microphones connected to the board, each of which with a 1-bit wide signal (Pulse Density Modulation, more on that later).
+The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to make it easily usable as simple C library. The input signals come from 6 Knowles SPM1437HM4H-B microphones connected to the board, each of which with a 1-bit wide signal (Pulse Density Modulation, more on that later).
 
 The audio processing code currently handles 6 channels from 6 microphones at a fixed output sample rate. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of data on the API side, to prevent overflows in case the user wants to momentarily stop reading data.
 
@@ -38,13 +38,15 @@ A CIC filter also has a drawback however. Its frequency response is far from the
 
 **TODO: include an image of the frequency response**
 
-Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrators stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is `f_s`, the output sample rate will be `f_s / R`.
+Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is `f_s`, the output sample rate will be `f_s / R`.
 
 **TODO: include an image of a CIC decimation filter**
 
 ## Documentation
 
 ### Getting Started
+
+First of all, make sure you have the required hardware: the BeagleBone Black, an SD card, and the Octopus Board.
 
 #### Get UIO to work and free the GPIO pins for the PRU (*in progress*)
 
