@@ -20,17 +20,76 @@ Using the PRUSS requires a driver. Currently, there are 2 choices available : `p
 
 It may be feasible in the future to convert the code to use `pru_rproc`. However, as we are going to see further in the report, the timing requirements in the PRU processing code are very tight, even using assembly. Whether it would be possible to meet them using C and `pru_rproc` has yet to be investigated.
 
-## CIC Filter
+## Audio Processing
 
 As mentioned earlier, we are using microphones with a 1-bit wide output at a very high sample rate (> 1 MHz). The signal these microphones input is a PDM (Pulse Density Modulation) signal which is of an unusual type and needs to be converted to a PCM (Pulse-Code Modulation) signal, which is much more commonly used for storing audio data.
 
+![Illustration of a PCM](https://upload.wikimedia.org/wikipedia/commons/b/bf/Pcm.svg)
+
+![Illustration of a PDM](https://upload.wikimedia.org/wikipedia/commons/2/20/Pulse-density_modulation_1_period.gif)
+
 In a PCM signal, each value represents its amplitude on a fixed scale at a fixed time. However, in a PDM signal, its amplitude at a given time is represented by the density of 1's relative to 0's at the said time. Converting a PDM signal to a PCM signal therefore requires using some kind of a moving-average filter.
+
+### CIC Filter
+
+Because we wanted to run this filter on the PRU with rather tight timing constraints, we chose to implement a CIC filter. CIC stands for Cascaded Integrator-Comb filter. It is essentially an efficient implementation of a moving-average filter which uses only additions and subtractions.
 
 ## Documentation
 
 ### Getting Started
 
+#### Get UIO to work and free the GPIO pins for the PRU (*in progress*)
 
+*Note: this was tested on this kernel:* `Linux beaglebone 4.4.91-ti-r133 #1 SMP Tue Oct 10 05:18:08 UTC 2017 armv7l GNU/Linux`
+
+In order to run the filter, we need to be able to use the input and output pins from the PRUs. Some of them can be multiplexed to the PRUs. However, by default, some pins cannot be reassigned to something else. To correct this, we need to load a [cape](https://elinux.org/Capemgr). To do so, open the `/boot/uEnv.txt` file on the board (backup it first!) and do the following modifications :
+
+Add the following line :
+
+    cape_enable=bone_capemgr.enable_partno=cape-universala
+
+And comment the following line :
+
+    enable_uboot_cape_universal=1
+
+You should now be able to multiplex a pin to the PRUs using the `config-pin` command (see these [instructions](Documentation/pins.md) for more details). We still have to enable the UIO driver, which is disabled in favor of remoteproc on this kernel. To do so, still in the `/boot/uEnv.txt` file, comment that line :
+
+    uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-4-TI-00A0.dtbo
+
+And uncomment this one :
+
+    uboot_overlay_pru=/lib/firmware/AM335X-PRU-UIO-00A0.dtbo
+
+Then :
+
+    $ cd /opt/source/dtb-4.4-ti
+    $ sudo nano src/arm/am335x-boneblack.dts
+
+Comment that line :
+
+    #include "am33xx-pruss-rproc.dtsi"
+
+And uncomment this one :
+
+    #include "am33xx-pruss-uio.dtsi"
+
+Then close nano and run the following commands :
+
+    $ make
+    $ sudo make install
+
+This is the final step. Run `sudo nano /etc/modprobe.d/pruss-blacklist.conf` and add the following lines :
+
+    blacklist pruss
+    blacklist pruss_intc
+    blacklist pru-rproc
+
+Now reboot the board, and you should be able to run commands such as `config-pin -q P8.45` without trouble.
+
+
+#### Install PRUSS Driver (`prussdrv`) and PRU Assembler (`pasm`)
+
+In order to install the PRUSS driver on the host side, first clone this [repo](https://github.com/beagleboard/am335x_pru_package) and then follow the "Development tools" section of these [instructions](http://mythopoeic.org/bbb-pru-minimal/).
 
 ### API
 
