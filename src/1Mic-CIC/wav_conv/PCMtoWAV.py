@@ -2,8 +2,10 @@ from scipy.io import wavfile as wf
 import numpy as np
 import matplotlib.pyplot as plt
 
-in_file = "../output/out.pcm"
-out_file = "../output/out.wav"
+filename = "out"
+
+in_file = "../output/" + filename + ".pcm"
+out_file = "../output/" + filename + ".wav"
 
 # FIXME: there is currently a spike at the beginning of the recording, cut it off for now
 offset = 20000
