@@ -2,17 +2,29 @@
 
 ## Introduction / Motivation
 
-The goal of this project is to implement audio processing on the BeagleBone Black's PRU microprocessor along with a C API built around it to make it easily usable as simple C library. The input signals come from 6 microphones connected to the board, each of which with a 1-bit wide signal (Pulse Density Modulation, more on that later).
+The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to make it easily usable as simple C library. The input signals come from 6 microphones connected to the board, each of which with a 1-bit wide signal (Pulse Density Modulation, more on that later).
 
 The audio processing code currently handles 6 channels from 6 microphones at a fixed output sample rate. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of data on the API side, to prevent overflows in case the user wants to momentarily stop reading data.
 
 Running the core audio processing code on the PRU instead of the main ARM CPU allows for lower latency due to the PRU's predictable timing and it not being subject to OS scheduling like a typical Linux process running on the ARM CPU would be.
 
-### PRU
+## PRU / PRUSS
 
-### CIC Filter
+The PRUSS is a module of the ARM CPU used on the BeagleBone Black. It stands for PRU SubSystem, where PRU stands for Programmable Real-time Unit. The PRUSS contains 2 PRUs which are essentially very small and simple 32-bit microprocessors running at 200 MHz and using a custom instruction set. Each PRU has a constant 200 MHz clock rate, 8 KB of instruction memory, 8 KB of data memory, along with 12 KB of data memory shared between the 2 PRUs.
+
+The PRUs are designed to be as time-deterministic as possible. That is, pretty much all instructions will execute in a constant number of cycles (usually 1, therefore in  5 ns at the 200 MHz clock rate) except for the memory instructions which may vary in execution time.
+
+The PRUSS also contains an interrupt controller which allows the PRU to send receive interrupts to and from the ARM CPU. It can be configured either from the PRUs themselves by changing the values of the configuration registers, or from the ARM CPU using the API provided by the PRUSSDRV driver (more information on that below).
+
+Using the PRUSS requires a driver. Currently, there are 2 choices available : `prussdrv` and the newer `remoteproc`. `prussdrv` provides a lower level interface 
+
+## CIC Filter
 
 ## Documentation
+
+### Getting Started
+
+
 
 ### API
 
