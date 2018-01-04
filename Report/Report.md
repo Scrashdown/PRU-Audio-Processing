@@ -10,7 +10,7 @@ Running the core audio processing code on the PRU instead of the main ARM CPU al
 
 ## PRU / PRUSS
 
-The PRUSS is a module of the ARM CPU used on the BeagleBone Black. It stands for PRU SubSystem, where PRU stands for Programmable Real-time Unit. The PRUSS contains 2 PRUs which are essentially very small and simple 32-bit microprocessors running at 200 MHz and using a custom instruction set. Each PRU has a constant 200 MHz clock rate, 8 KB of instruction memory, 8 KB of data memory, along with 12 KB of data memory shared between the 2 PRUs. They can be programmed either in assembly using the `pasm` assembler or in C using the `clpru` and `lnkpru` tools.
+The PRUSS is a module of the ARM CPU used on the BeagleBone Black. It stands for PRU SubSystem, where PRU stands for Programmable Real-time Unit. The PRUSS contains 2 PRUs which are essentially very small and simple 32-bit microprocessors running at 200 MHz and using a custom instruction set. Each PRU has a constant 200 MHz clock rate, 8 kB of instruction memory, 8 kB of data memory, along with 12 kB of data memory shared between the 2 PRUs. They can be programmed either in assembly using the `pasm` assembler or in C using the `clpru` and `lnkpru` tools.
 
 The PRUs are designed to be as time-deterministic as possible. That is, pretty much all instructions will execute in a constant number of cycles (usually 1, therefore in  5 ns at the 200 MHz clock rate) except for the memory instructions which may vary in execution time.
 
@@ -18,7 +18,7 @@ The PRUSS also contains an interrupt controller which allows the PRU to send rec
 
 Using the PRUSS requires a driver. Currently, there are 2 choices available : `prussdrv` (often referred to as `UIO`) and the newer `pru_rproc`. `prussdrv` provides a lower level interface than `pru_rproc`. `pru_rproc` provides a C library for message passing between the PRU and the ARM CPU which makes programming simpler than with `prussdrv`. However, the current lack of examples online for using `pru_rproc`, along with performance issues encountered using it for this project, made us choose `prussdrv` instead.
 
-It may be feasible in the future to convert the code to use `pru_rproc`. However, as we are going to see further in the report, the timing requirements in the PRU processing code are very tight, even using assembly. Whether it would be possible to meet them using C and `pru_rproc` has yet to be investigated.
+That said, it looks like `prussdrv` is currently being phased out of support by Texas Instruments in favor of `pru_rproc`. It may be feasible in the future to convert the code to use `pru_rproc`. However, as we are going to see further in the report, the timing requirements in the PRU processing code are very tight, even using assembly. Whether it would be possible to meet them using C and `pru_rproc` has yet to be investigated.
 
 ## Audio Processing
 
@@ -38,7 +38,7 @@ A CIC filter also has a drawback however. Its frequency response is far from the
 
 **TODO: include an image of the frequency response**
 
-Now let's dive into more detail about the CIC filter.
+Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrators stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is `f_s`, the output sample rate will be `f_s / R`.
 
 **TODO: include an image of a CIC decimation filter**
 
@@ -105,6 +105,12 @@ In order to install the PRUSS driver on the host side, first clone this [repo](h
 
 If everything went well, the `prussdrv` library and the `pasm` assembler should be installed on your board and ready to be used.
 
+### The microphones
+
+### Core processing code
+
+### Back-end
+
 ### API
 
 The C interface is written in the `interface.h` and `interface.c` files. It is currently very simple and provides the following functions :
@@ -155,10 +161,6 @@ void enable_recording(void);
 */
 void disable_recording(void);
 ```
-
-### Back-end
-
-### Core processing code
 
 ## Challenges faced
 
