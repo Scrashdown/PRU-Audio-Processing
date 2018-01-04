@@ -5,10 +5,6 @@
 #include "interface.h"
 #include "loader.h"
 
-// TODO: change these values
-#define MIN_SAMPLE_RATE_HZ 16000
-#define MAX_SAMPLE_RATE_HZ 16000
-
 #define MIN_NCHAN 1
 #define MAX_NCHAN 6
 
@@ -68,14 +64,6 @@ void *processing_routine(void * __args)
 
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
-            // DEBUG
-            printf("    PRUSSDRV buffer data sample:\n");
-            printf("    ");
-            for (size_t i = 0; i < 16; ++i) {
-                printf("%" PRIu32 " ", ((uint32_t *) new_data_start)[i]);
-            }
-            printf("\n");
-
             size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
             size_t block_count = args.host_datain_buffer_len / block_size;
             pthread_mutex_lock(&ringbuf_mutex);

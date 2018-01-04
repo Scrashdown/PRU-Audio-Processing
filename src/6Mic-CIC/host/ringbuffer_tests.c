@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 #include "ringbuffer.h"
 
 
 int main(void) {
-    printf("\nStarting ringbuffer testing program!\n");
+    printf("\nSTARTING RINGBUFFER TESTING PROGRAM!\n");
 
     printf("TEST: A newly created buffer has length 0: ");
     const size_t nelem = 10;
@@ -102,6 +103,38 @@ int main(void) {
     } else {
         printf("Failure! Expected %zu to be written but found %zu.\n", 0, written);
     }
+
+    ringbuf_free(ringbuf);
+
+    printf("TEST: Pushing and popping data to a huge buffer does not corrupt it: ");
+    printf("MARK\n");
+    ringbuffer_t * huge_buffer = ringbuf_create(4 * 6, 20000);
+    if (huge_buffer == NULL) {
+        fprintf(stderr, "\nERROR: ringbuffer could not be created for test.\n");
+    }
+    // Fill the buffer with 7's
+    uint8_t seven = 7;
+    for (size_t i = 0; i < 4 * 6 * 20000; ++i) {
+        //printf("TEST: i = %zu\n", i);
+        assert(1 == ringbuf_push(huge_buffer, &seven, 1, 1));
+    }
+    uint8_t result = 0;
+    success = 0;
+    for (size_t i = 0; i < 4 * 6 * 20000; ++i) {
+        assert(1 == ringbuf_pop(huge_buffer, &result, 1, 1));
+        if (result != 7) {
+            success += 1;
+        }
+    }
+    //printf("MARK\n");
+    if (success) {
+        printf("Success!\n");
+    } else {
+        printf("Failure!\n");
+    }
+
+    ringbuf_free(huge_buffer);
+    printf("EXITING TESTING PROGRAM\n");
 
     return 0;
 }
