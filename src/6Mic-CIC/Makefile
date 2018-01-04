@@ -4,8 +4,6 @@ LDFLAGS = -lprussdrv -lpthread
 
 PRU_CC = pasm
 
-DRV_HEADER = ""
-
 all: pru1 loading
 
 clean:

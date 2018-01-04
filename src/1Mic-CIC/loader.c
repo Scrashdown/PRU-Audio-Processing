@@ -15,8 +15,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <pruss/prussdrv.h>
-#include <pruss/pruss_intc_mapping.h>
+#include <prussdrv.h>
+#include <pruss_intc_mapping.h>
 
 #define PRU_NUM0 0
 #define PRU_NUM1 1

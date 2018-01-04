@@ -87,9 +87,15 @@ This is the final step. Run `sudo nano /etc/modprobe.d/pruss-blacklist.conf` and
 Now reboot the board, and you should be able to run commands such as `config-pin -q P8.45` without trouble.
 
 
-#### Install PRUSS Driver (`prussdrv`) and PRU Assembler (`pasm`)
+#### Install PRUSS Driver Library (`prussdrv`) and PRU Assembler (`pasm`)
 
-In order to install the PRUSS driver on the host side, first clone this [repo](https://github.com/beagleboard/am335x_pru_package) and then follow the "Development tools" section of these [instructions](http://mythopoeic.org/bbb-pru-minimal/).
+In order to install the PRUSS driver on the host side, first clone this [repo](https://github.com/beagleboard/am335x_pru_package). Then `cd` into the cloned repository and run the following commands :
+
+    $ make
+    $ sudo make install
+    $ sudo ldconfig
+
+If everything went well, the `prussdrv` library and the `pasm` assembler should be installed on your board and ready to be used.
 
 ### API
 

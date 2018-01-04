@@ -6,8 +6,8 @@
 
 
 #include <stddef.h>
-#include <pruss/prussdrv.h>
-#include <pruss/pruss_intc_mapping.h>
+#include <prussdrv.h>
+#include <pruss_intc_mapping.h>
 
 
 /**
