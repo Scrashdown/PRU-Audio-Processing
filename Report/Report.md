@@ -186,8 +186,12 @@ Currently, we use only one PRU (PRU1) to handle the audio processing with the CI
 
 It could for example be possible to implement a CIC on both PRUs which would allow us to handle more than 6 channels. Another idea would be to keep the CIC filter on one PRU, but move the compensation filter which is currently implemented on the host ARM CPU to the other PRU, offloading the ARM CPU even further and also reducing the latency.
 
-### Use of a lookup table (possible with CIC filter which is IIR ?)
+### Use of a lookup table (possible with CIC filter which has IIR components ?)
 
 ### Better and more modular interface (not just drop channels for example)
+
+For now the interface is very limited, and depending on how many channels the user chooses to read, the whole program can also be very wasteful on resources. This is because with the current implementation, the PRU always processes the 6 channels, and the host interface's backend always records all 6 channels, even if in the end the user requests fewer channels. In the event the user wants to read fewer channels, the interface's front-end will just drop the data from the channels the user does not want, before sending the data to the user.
+
+An improvement could be to let the user choose how many channels he intends to use at most, and then only handle this number of channels instead of the maximum possible. However, making the CIC filter's code modular might not be a feasible task given the high performance requirements, at least with the current model of our implementation. A workaround would be to write several programs, possibly one for each number of channels.
 
 ### Introduce further filtering on the host side
