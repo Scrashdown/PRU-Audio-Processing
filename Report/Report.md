@@ -129,7 +129,7 @@ For this project, we are using the Knowles SPM1437HM4H-B microphones which outpu
 * 2 x GROUND (power) : Ground
 * Vdd (power) : Vdd
 * CLOCK (input) : The clock input, must be at a frequency > 1 MHz to wake up the microphone. Dictates the microphone's sample rate, `f_s = f_clk`.
-* DATA (output) : The microphone's PDM output. Its sample rate equals that of the CLOCK signal.
+* DATA (output) : The microphone's PDM output. Its sample rate equals that of the CLOCK signal. The DATA signal is ready shortly after the rising or falling edge of the CLK. This delay is variable, but is between 18 ns and 125 ns. It is designated in the documentation as `t_dv`.
 * SELECT (input) : Selects whether data is ready after rising or falling edge of CLOCK, (VDD => rising, GND => falling).
 
 The BeagleBone Black already has pins for GND and Vdd, we connect them directly to the corresponding pins on the microphones.
