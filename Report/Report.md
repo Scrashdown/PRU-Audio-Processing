@@ -4,9 +4,9 @@
 
 The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to make it easily usable as simple C library. The input signals come from 6 Knowles SPM1437HM4H-B microphones connected to the board, each of which with a 1-bit wide signal (Pulse Density Modulation, more on that later).
 
-The audio processing code currently handles 6 channels from 6 microphones at a fixed output sample rate. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of data on the API side, to prevent overflows in case the user wants to momentarily stop reading data.
+The audio processing code currently handles 6 channels from 6 microphones at a fixed output sample rate, using one of the 2 PRUs present on the board. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of data on the API side, to prevent overflows in case the user wants to momentarily stop reading data.
 
-Running the core audio processing code on the PRU instead of the main ARM CPU allows for lower latency due to the PRU's predictable timing and it not being subject to OS scheduling like a typical Linux process running on the ARM CPU would be.
+Running the core audio processing code on the PRU instead of the main ARM CPU allows for lower latency due to the PRU's predictable timing and it not being subject to OS scheduling like a typical Linux process running on the ARM CPU would be. Offloading the ARM CPU from such an intensive task also prevents our library from having a significant impact on the global performance of the host when it is used.
 
 ## PRU / PRUSS
 
@@ -40,7 +40,12 @@ A CIC filter also has a drawback however. Its frequency response is far from the
 
 Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is `f_s`, the output sample rate will be `f_s / R`.
 
-**TODO: include an image of a CIC decimation filter**
+**TODO: include an image of a CIC decimation filter's structure**
+
+The filter's resource usage depends on its parameters, on the platform where it is implemented and how it is implemented. More detailed explanation will be made in the implementation section of this report. However, by considering only the theoretical structure of the filter, we can deduce some general rules :
+
+* Memory usage is proportional to N and M : The filter has N integrator stages and N comb stages of which we need to store the values, therefore memory usage will increase with N. Also, since M is the delay of the samples in the comb stages, for each comb stage it is necessary to store the previous samples up to M, therefore memory usage will also increase with M.
+* Computational 'usage' is inversely proportional to R : Since the comb stages are preceded by a decimator of rate R, the comb stages need to be updated R times less often than the integrator stages. Therefore, as R increases, less computational power is required by the comb stages. However, the reduction cannot be arbitrarily high, because the integrator stages always need to be updated at the very high input sample rate, independently of R.
 
 ## Documentation
 
@@ -107,6 +112,12 @@ In order to install the PRUSS driver on the host side, first clone this [repo](h
 
 If everything went well, the `prussdrv` library and the `pasm` assembler should be installed on your board and ready to be used.
 
+#### Plug the Octopus board and write some code!
+
+**TODO: perhaps move most of the code deploy.sh to a file called setup.sh, except without starting the main program**
+
+**TODO: include a example of code using the library**
+
 ### Microphones and wiring diagram
 
 **TODO: add a picture of the microphones**
@@ -116,9 +127,14 @@ For this project, we are using the Knowles SPM1437HM4H-B microphones which outpu
 * 2 x GROUND (power) : Ground
 * Vdd (power) : Vdd
 * CLOCK (input) : The clock input, must be at a frequency > 1 MHz to wake up the microphone. Dictates the microphone's sample rate, `f_s = f_clk`.
-* SELECT (input) : Selects whether data is ready after rising or falling edge of CLOCK, (VDD => rising, GND => falling), on our microphones, the SELECT LINE is soldered to VDD.
 * DATA (output) : The microphone's PDM output. Its sample rate equals that of the CLOCK signal.
+* SELECT (input) : Selects whether data is ready after rising or falling edge of CLOCK, (VDD => rising, GND => falling).
 
+The BeagleBone Black already has pins for GND and Vdd, we connect them directly to the corresponding pins on the microphones.
+
+The CLK signal is generated using one of the BeagleBone's internal PWM which is output on one of the board's pins and is configured by a bash script to generate an appropriate CLK signal for the microphones. In our implementation, the PRU's also need to be able to poll the state of the CLK signal. In order to achieve this, the PWM (CLK) signal is also connected to some of the BeagleBone's pins, which are multiplexed to the PRU.
+
+The DATA pin of the microphone is then connected to a pin of the board which is multiplexed to the PRU.
 
 **TODO: add a picture showing the pins of the microphones, maybe how one microphone is connected to the board**
 
