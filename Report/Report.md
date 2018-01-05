@@ -46,13 +46,13 @@ Now let's dive into more detail about the CIC filter. The filter has 3 parameter
 
 ### Getting Started
 
-First of all, make sure you have the required hardware: the BeagleBone Black, an SD card, and the Octopus Board.
+First of all, make sure you have the required hardware: the BeagleBone Black, an SD card, and the Octopus Board. Flash the board with the latest "IoT" Debian image following these [instructions](https://beagleboard.org/getting-started).
 
 #### Get UIO to work and free the GPIO pins for the PRU (*in progress*)
 
 *Note: this was tested on this kernel:* `Linux beaglebone 4.4.91-ti-r133 #1 SMP Tue Oct 10 05:18:08 UTC 2017 armv7l GNU/Linux`
 
-In order to run the filter, we need to be able to use the input and output pins from the PRUs. Some of them can be multiplexed to the PRUs. However, by default, some pins cannot be reassigned to something else. To correct this, we need to load a [cape](https://elinux.org/Capemgr). To do so, open the `/boot/uEnv.txt` file on the board (backup it first!) and do the following modifications :
+In order to run the filter, we need to be able to use the input and output pins from the PRUs to be able to read data from the microphones. Some of them can be multiplexed to the PRUs. However, by default, some pins cannot be reassigned to something else. To correct this, we need to load a [cape](https://elinux.org/Capemgr). To do so, open the `/boot/uEnv.txt` file on the board (backup it first!) and do the following modifications :
 
 Add the following line :
 
@@ -107,7 +107,22 @@ In order to install the PRUSS driver on the host side, first clone this [repo](h
 
 If everything went well, the `prussdrv` library and the `pasm` assembler should be installed on your board and ready to be used.
 
-### The microphones
+### Microphones and wiring diagram
+
+**TODO: add a picture of the microphones**
+
+For this project, we are using the Knowles SPM1437HM4H-B microphones which output a PDM signal at a very high frequency (> 1 MHz), see the microphone's data sheet in the documentation for more details. They have 6 pins :
+
+* 2 x GROUND (power) : Ground
+* Vdd (power) : Vdd
+* CLOCK (input) : The clock input, must be at a frequency > 1 MHz to wake up the microphone. Dictates the microphone's sample rate, `f_s = f_clk`.
+* SELECT (input) : Selects whether data is ready after rising or falling edge of CLOCK, (VDD => rising, GND => falling), on our microphones, the SELECT LINE is soldered to VDD.
+* DATA (output) : The microphone's PDM output. Its sample rate equals that of the CLOCK signal.
+
+
+**TODO: add a picture showing the pins of the microphones, maybe how one microphone is connected to the board**
+
+**TODO: add a picture of the microphones timing diagram**
 
 ### Core processing code
 
@@ -175,8 +190,6 @@ Apart from the fact that embedded systems is an inherently tough subject that is
 ### Limited number of registers and very tight timings on the PRU
 
 On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than TODO: cycles. All of the PRU's registers are used, and the majority of the banks' registers are used as well.
-
-### Using threads
 
 ## Possible improvements and additional features
 
