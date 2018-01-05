@@ -148,6 +148,8 @@ Doing this has a drawback however, for each round of processing (processing all 
 
 ### Core processing code
 
+The core audio processing code, which is a CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory and interrupting the host everytime the output samples are ready.
+
 ### Back-end
 
 ### API
