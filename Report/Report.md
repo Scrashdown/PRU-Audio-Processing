@@ -182,6 +182,10 @@ On a more technical point of view, processing six channels simultaneously on one
 
 ### Use both PRUs
 
+Currently, we use only one PRU (PRU1) to handle the audio processing with the CIC filter. The design choice was made to make the implementation simpler. However, this also limited us to being only able to process 6 channels at a time instead of the initial goal of 8.
+
+It could for example be possible to implement a CIC on both PRUs which would allow us to handle more than 6 channels. Another idea would be to keep the CIC filter on one PRU, but move the compensation filter which is currently implemented on the host ARM CPU to the other PRU, offloading the ARM CPU even further and also reducing the latency.
+
 ### Use of a lookup table (possible with CIC filter which is IIR ?)
 
 ### Better and more modular interface (not just drop channels for example)
