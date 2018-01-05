@@ -45,13 +45,15 @@ Now let's dive into more detail about the CIC filter. The filter has 3 parameter
 The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. More detailed explanation will be made in the implementation section of this report. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
 
 * Memory usage is more or less proportional to N and M : The filter has N integrator stages and N comb stages of which we need to store the values, therefore memory usage will increase with N. Also, since M is the delay of the samples in the comb stages, for each comb stage it is necessary to store the previous samples up to M, therefore memory usage will also increase with M.
-* Computational resource usage is inversely proportional to R : Since the comb stages are preceded by a decimator of rate R, the comb stages need to be updated R times less often than the integrator stages. Therefore, as R increases, less computational power is required by the comb stages. However, the reduction cannot be arbitrarily high, because the integrator stages always need to be updated at the very high input sample rate, independently of R.
+* Computational resource usage is inversely correlated to R : Since the comb stages are preceded by a decimator of rate R, the comb stages need to be updated R times less often than the integrator stages. Therefore, as R increases, less computational power is required by the comb stages. However, the reduction cannot be arbitrarily high, because the integrator stages always need to be updated at the very high input sample rate, independently of R. The processing power needed for these stages, and any other overhead added by the implementation, is therefore a lower-bound of the the total processing power required to run the filter.
 
 ## Documentation
 
 ### Getting Started
 
 First of all, make sure you have the required hardware: the BeagleBone Black, an SD card, and the Octopus Board. Flash the board with the latest "IoT" Debian image following these [instructions](https://beagleboard.org/getting-started).
+
+**TODO: include image of the hardware, of possible**
 
 #### Configure uio_pruss and free the GPIO pins for the PRU (*in progress*)
 
@@ -67,7 +69,7 @@ And comment the following line :
 
     enable_uboot_cape_universal=1
 
-You should now be able to multiplex a pin to the PRUs using the `config-pin` command (see these [instructions](Documentation/pins.md) for more details). We still have to enable the UIO driver, which is disabled in favor of remoteproc on this kernel. To do so, still in the `/boot/uEnv.txt` file, comment that line :
+You should now be able to multiplex a pin to the PRUs using the `config-pin` command (see these [instructions](Documentation/pins.md) for more details). We still have to enable the UIO driver, which is disabled in favor of `pru_rproc` on this kernel. To do so, still in the `/boot/uEnv.txt` file, comment that line :
 
     uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-4-TI-00A0.dtbo
 
@@ -137,6 +139,10 @@ The CLK signal is generated using one of the BeagleBone's internal PWM which is 
 The DATA pin of the microphone is then connected to a pin of the board which is multiplexed to the PRU.
 
 **TODO: add a picture showing the pins of the microphones, maybe how one microphone is connected to the board**
+
+Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones per board's pin. To achieve this, we set one of the SELECT lines of the microphones to 2 different values. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. **TODO: talk about the resistor used to avoid short-circuits.**
+
+Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for `t_dv` twice instead of only once with the 'simple' solution using 6 pins. This is because in this case we have to wait for a clock edge twice. According to the microphone's datasheet, `t_dv` can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Octopus board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
 
 **TODO: add a picture of the microphones timing diagram**
 
