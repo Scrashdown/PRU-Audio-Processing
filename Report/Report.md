@@ -34,20 +34,28 @@ In a PCM signal, each value represents its amplitude on a fixed scale at a fixed
 
 ### CIC Filter
 
-Because we wanted to run this filter on the PRU with rather tight timing constraints, we chose to implement a CIC filter. CIC stands for Cascaded Integrator-Comb filter. It is essentially an efficient implementation of a moving-average filter which uses only additions and subtractions. Although the PRU is capable of performing unsigned integer multiplications (required by other types of filters) by using its Multiply and Accumulate Unit, they take several cycles more than the one-cycle instructions used for regular additions and subtractions. Since our goal is to handle several channels at once with very tight timing constraints, computational savings really matter.
+Because we wanted to run this filter on the PRU with rather tight timing constraints, we chose to implement a CIC filter. CIC stands for Cascaded Integrator-Comb filter. There are two general types of CIC filters : the decimation filters, which is the type we're using in this project, and the interpolation filters. From now on we will call CIC decimator filters simply CIC filters.
+
+It is essentially an efficient implementation of a moving-average filter which uses only additions and subtractions. Although the PRU is capable of performing unsigned integer multiplications (required by other types of filters) by using its Multiply and Accumulate Unit, they take several cycles more than the one-cycle instructions used for regular additions and subtractions. Since our goal is to handle several channels at once with very tight timing constraints, computational savings really matter.
 
 A CIC filter also has a drawback however. Its frequency response is far from the ideal flat response we would like to have. To get a sharper response, it is necessary to append another filter to it, commonly called a compensation filter. That said, since our CIC filter's output is at a lower rate (64 kHz for now) than its input (~ 1.028 MHz), applying this filter after the CIC one will require much less computational resources than applying it on the raw, very high rate input signal from the microphones.
 
 **TODO: include an image of the frequency response**
 
-Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is `f_s`, the output sample rate will be `f_s / R`.
+Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is `f_s`, the output sample rate will be `f_s / R`. A CIC interpolation filter is very similar, except the comb stages come first, followed by an interpolator of rate R, and finally the integrators.
 
 **TODO: include an image of a CIC decimation filter's structure**
 
-The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. More detailed explanation will be made in the implementation section of this report. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
+The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. More detailed explanation will follow in the implementation section of this report. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
 
 * Memory usage is more or less proportional to N and M : The filter has N integrator stages and N comb stages of which we need to store the values, therefore memory usage will increase with N. Also, since M is the delay of the samples in the comb stages, for each comb stage it is necessary to store the previous samples up to M, therefore memory usage will also increase with M.
 * Computational resource usage is inversely correlated to R : Since the comb stages are preceded by a decimator of rate R, the comb stages need to be updated R times less often than the integrator stages. Therefore, as R increases, less computational power is required by the comb stages. However, the reduction cannot be arbitrarily high, because the integrator stages always need to be updated at the very high input sample rate, independently of R. The processing power needed for these stages, and any other overhead added by the implementation, is therefore a lower-bound of the the total processing power required to run the filter.
+
+Finally, some important things to know about CIC decimation filters is that overflows will occur in the integrator stages, however, the output of the filter will still be correct if each stage follows modular arithmetic rules (PRU registers do, since they can overflow and loop back to zero) and if each stage has a bit width large enough that it can support the maximum value expected at the end of the filter. To check the second condition, a formula exists to find out about the required bit width of the stages for the filter to be correct :
+
+$$B_{out} = \lceil Nlog_2RM + B_{in} \rceil$$
+
+Where $B_in$ is the bit width of the filter's input (in our case 1 bit), M, N and R are the filter's parameters, and $B_{out}$ is the required bit width for all stages of the filter.
 
 ## Documentation
 
@@ -158,7 +166,7 @@ Since we are using the Octopus board, we have to read data at every edge of the 
 
 Reading the microphones' data is achieved by reading bits of the R31 register, which is connected to the PRU's input pins, to which the microphones' DATA lines are connected. Since we connected the microphones' clock to one of the input pins of the PRU as well, reading its state is done the same way. In order to know when to read the data, the PRU polls the CLK signal until it detects an edge. It then waits for 25 cycles (`t_dv`) and finally reads the data and stores it in a register.
 
-This register is the first stage of the...
+This register is the first integrator in the CIC filter.
 
 ### Back-end
 
