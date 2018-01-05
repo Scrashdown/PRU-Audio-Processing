@@ -152,11 +152,13 @@ Doing this has a drawback however, for each round of processing (processing all 
 
 The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory and interrupting the host everytime the output samples are ready. It is written exclusively in PRU assembly (`pru1.asm` in the project files).
 
-For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpad as well.
+For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpad as well. It does so by exchanges some of its registers with the scratchpads using the XIN and XOUT instructions.
+
+Since we are using the Octopus board, we have to read data at every edge of the clock. The processing is done in 3 major steps : first we read the data for the channels 1, 2 and 3, process it and output it to the host memory, then we do the same for channels 4, 5 and 6, and finally we interrupt the host to let it know data for all channels is ready. We also have to keep track of several different counters along the way, and also do the correct register exchanges to keep any data from being overwritten.
 
 Reading the microphones' data is achieved by reading bits of the R31 register, which is connected to the PRU's input pins, to which the microphones' DATA lines are connected. Since we connected the microphones' clock to one of the input pins of the PRU as well, reading its state is done the same way. In order to know when to read the data, the PRU polls the CLK signal until it detects an edge. It then waits for 25 cycles (`t_dv`) and finally reads the data and stores it in a register.
 
-This register is...
+This register is the first stage of the...
 
 ### Back-end
 
