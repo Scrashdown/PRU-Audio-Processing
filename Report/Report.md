@@ -16,9 +16,9 @@ The PRUs are designed to be as time-deterministic as possible. That is, pretty m
 
 The PRUSS also contains an interrupt controller which allows the PRU to send receive interrupts to and from the ARM CPU. It can be configured either from the PRUs themselves by changing the values of the configuration registers, or from the ARM CPU using the API provided by the PRUSSDRV driver (more information on that below).
 
-Using the PRUSS requires a driver. Currently, there are 2 choices available : `prussdrv` (often referred to as `UIO`) and the newer `pru_rproc`. `prussdrv` provides a lower level interface than `pru_rproc`. `pru_rproc` provides a C library for message passing between the PRU and the ARM CPU which makes programming simpler than with `prussdrv`. However, the current lack of examples online for using `pru_rproc`, along with performance issues encountered using it for this project, made us choose `prussdrv` instead.
+Using the PRUSS requires a driver. Currently, there are 2 choices available : `uio_pruss` (along with the `prussdrv` library) and the newer `pru_rproc`. `oui_pruss` provides a lower level interface than `pru_rproc`. `pru_rproc` provides a C library for message passing between the PRU and the ARM CPU which makes programming simpler than with `uio_pruss`. However, the current lack of examples online for using `pru_rproc`, along with performance issues encountered using it for this project, made us choose `uio_pruss` instead.
 
-That said, it looks like `prussdrv` is currently being phased out of support by Texas Instruments in favor of `pru_rproc`. It may be feasible in the future to convert the code to use `pru_rproc`. However, as we are going to see further in the report, the timing requirements in the PRU processing code are very tight, even using assembly. Whether it would be possible to meet them using C and `pru_rproc` has yet to be investigated.
+That said, it looks like `uio_pruss` is currently being phased out of support by Texas Instruments in favor of `pru_rproc`. It may be feasible in the future to convert the code to use `pru_rproc`. However, as we are going to see further in the report, the timing requirements in the PRU processing code are very tight, even using assembly. Whether it would be possible to meet them using C and `pru_rproc` has yet to be investigated.
 
 ## Audio Processing
 
@@ -42,10 +42,10 @@ Now let's dive into more detail about the CIC filter. The filter has 3 parameter
 
 **TODO: include an image of a CIC decimation filter's structure**
 
-The filter's resource usage depends on its parameters, on the platform where it is implemented and how it is implemented. More detailed explanation will be made in the implementation section of this report. However, by considering only the theoretical structure of the filter, we can deduce some general rules :
+The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. More detailed explanation will be made in the implementation section of this report. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
 
-* Memory usage is proportional to N and M : The filter has N integrator stages and N comb stages of which we need to store the values, therefore memory usage will increase with N. Also, since M is the delay of the samples in the comb stages, for each comb stage it is necessary to store the previous samples up to M, therefore memory usage will also increase with M.
-* Computational 'usage' is inversely proportional to R : Since the comb stages are preceded by a decimator of rate R, the comb stages need to be updated R times less often than the integrator stages. Therefore, as R increases, less computational power is required by the comb stages. However, the reduction cannot be arbitrarily high, because the integrator stages always need to be updated at the very high input sample rate, independently of R.
+* Memory usage is more or less proportional to N and M : The filter has N integrator stages and N comb stages of which we need to store the values, therefore memory usage will increase with N. Also, since M is the delay of the samples in the comb stages, for each comb stage it is necessary to store the previous samples up to M, therefore memory usage will also increase with M.
+* Computational resource usage is inversely proportional to R : Since the comb stages are preceded by a decimator of rate R, the comb stages need to be updated R times less often than the integrator stages. Therefore, as R increases, less computational power is required by the comb stages. However, the reduction cannot be arbitrarily high, because the integrator stages always need to be updated at the very high input sample rate, independently of R.
 
 ## Documentation
 
@@ -53,7 +53,7 @@ The filter's resource usage depends on its parameters, on the platform where it 
 
 First of all, make sure you have the required hardware: the BeagleBone Black, an SD card, and the Octopus Board. Flash the board with the latest "IoT" Debian image following these [instructions](https://beagleboard.org/getting-started).
 
-#### Get UIO to work and free the GPIO pins for the PRU (*in progress*)
+#### Configure uio_pruss and free the GPIO pins for the PRU (*in progress*)
 
 *Note: this was tested on this kernel:* `Linux beaglebone 4.4.91-ti-r133 #1 SMP Tue Oct 10 05:18:08 UTC 2017 armv7l GNU/Linux`
 
