@@ -166,11 +166,15 @@ void disable_recording(void);
 
 ## Challenges faced
 
-### Lack of documentation
+### Lack of documentation and the existence of 2, very different drivers
 
-### Two drivers
+The biggest challenge faced in this project is probably the lack of clear and organized documentation about how to run code on the PRU from the Linux host, how to configure the operating system so that the BeagleBone's pins can be multiplexed to the PRU, how to choose which driver to use, and finally how to configure the BeagleBone for it to work. Most of the documentation and examples are scarce, sometimes outdated and scattered across multiple websites which forced us to do a lot of trial and errors on things such has how to enable drivers or the right interrupts between the host and the PRU.
 
-### Limited number of registers
+Apart from the fact that embedded systems is an inherently tough subject that is by far not as popular as more high level programming is (especially about the PRU, which seems to be a piece of hardware very few people use or know about), I think the scarcity of the documentation is probably the greatest factor that makes the learning curve for this project rather steep.
+
+### Limited number of registers and very tight timings on the PRU
+
+On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than TODO: cycles. All of the PRU's registers are used, and the majority of the banks' registers are used as well.
 
 ### Using threads
 
