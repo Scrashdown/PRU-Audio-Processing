@@ -45,7 +45,6 @@ void *processing_routine(void * __args)
         pthread_exit(&args);
     }
 
-    // Make sure the size of the PRU buffer is a multiple of 48 as expected
     int next_evt = PRU_EVTOUT_0;
     volatile void * new_data_start;
 
@@ -55,9 +54,11 @@ void *processing_routine(void * __args)
         prussdrv_pru_clear_event(next_evt, PRU1_ARM_INTERRUPT);
         
         if (next_evt == PRU_EVTOUT_0) {
+            printf("INT0\n");
             next_evt = PRU_EVTOUT_1;
             new_data_start = args.host_datain_buffer;
         } else {
+            printf("INT1\n");
             next_evt = PRU_EVTOUT_0;
             new_data_start = args.host_datain_buffer + args.host_datain_buffer_len / 2;
         }
