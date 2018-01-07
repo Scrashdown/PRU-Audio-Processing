@@ -165,7 +165,7 @@ int main(void) {
 
 ### Microphones and wiring diagram
 
-**TODO: add a picture of the microphones**
+![Picture of the microphones we're using](Pictures/mics.png)
 
 For this project, we are using the Knowles SPM1437HM4H-B microphones which output a PDM signal at a very high frequency (> 1 MHz), see the microphone's data sheet in the documentation for more details. They have 6 pins :
 
@@ -181,13 +181,13 @@ The CLK signal is generated using one of the BeagleBone's internal PWM which is 
 
 The DATA pin of the microphone is then connected to a pin of the board which is multiplexed to the PRU.
 
-**TODO: add a picture showing the pins of the microphones, maybe how one microphone is connected to the board**
+![Wiring of one microphone to the board](Pictures/wiring.png)
 
 Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones per board's pin. To achieve this, we set one of the SELECT lines of the microphones to 2 different values. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid short circuits between the 2 microphones connected to the same pin, it is necessary to place a resistor between each microphone and the pin.
 
 Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for `t_dv` twice instead of only once with the 'simple' solution using 6 pins. This is because in this case we have to wait for a clock edge twice. According to the microphone's datasheet, `t_dv` can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Octopus board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
 
-**TODO: add a picture of the microphones timing diagram**
+![Timing diagram of the microphones](Pictures/timing_diagram.png)
 
 ### Core processing code
 
@@ -279,6 +279,8 @@ Apart from the fact that embedded systems is an inherently tough subject that is
 ### Limited number of registers and very tight timings on the PRU
 
 On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than TODO: cycles. All of the PRU's registers are used, and the majority of the banks' registers are used as well.
+
+**TODO: add the spectrogram of the weird timing bug on the host side**
 
 ## Possible improvements and additional features
 
