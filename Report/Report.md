@@ -126,8 +126,6 @@ If everything went well, the `prussdrv` library and the `pasm` assembler should 
 
 #### Plug the Octopus board and write some code!
 
-**TODO: perhaps move most of the code deploy.sh to a file called setup.sh, except without starting the main program**
-
 ```C
 /* Example code for using the library. */
 #include <stdio.h>
@@ -141,7 +139,6 @@ If everything went well, the `prussdrv` library and the `pasm` assembler should 
 #define NCHANNELS 6
 
 int main(void) {
-    // TODO:
     FILE * outfile = fopen(OUTFILE, "w");
     void * tmp_buffer = calloc(NSAMPLES, NCHANNELS * SAMPLE_SIZE_BYTES);
     pcm_t * pcm = pru_processing_init();
@@ -169,11 +166,11 @@ int main(void) {
 
 For this project, we are using the Knowles SPM1437HM4H-B microphones which output a PDM signal at a very high frequency (> 1 MHz), see the microphone's data sheet in the documentation for more details. They have 6 pins :
 
-* 2 x GROUND (power) : Ground
-* Vdd (power) : Vdd
-* CLOCK (input) : The clock input, must be at a frequency > 1 MHz to wake up the microphone. Dictates the microphone's sample rate, `f_s = f_clk`.
-* DATA (output) : The microphone's PDM output. Its sample rate equals that of the CLOCK signal. The DATA signal is ready shortly after the rising or falling edge of the CLK. This delay is variable, but is between 18 ns and 125 ns. It is designated in the documentation as `t_dv`.
-* SELECT (input) : Selects whether data is ready after rising or falling edge of CLOCK, (VDD => rising, GND => falling).
+* 2 x **GROUND** (power) : Ground
+* **Vdd** (power) : Vdd
+* **CLOCK** (input) : The clock input, must be at a frequency > 1 MHz to wake up the microphone. Dictates the microphone's sample rate, `f_s = f_clk`.
+* **DATA** (output) : The microphone's PDM output. Its sample rate equals that of the CLOCK signal. The DATA signal is ready shortly after the rising or falling edge of the CLK. This delay is variable, but is between 18 ns and 125 ns. It is designated in the documentation as `t_dv`.
+* **SELECT** (input) : Selects whether data is ready after rising or falling edge of CLOCK, (VDD => rising, GND => falling).
 
 The BeagleBone Black already has pins for GND and Vdd, we connect them directly to the corresponding pins on the microphones.
 
@@ -189,6 +186,10 @@ Doing this has a drawback however, for each round of processing (processing all 
 
 ![Timing diagram of the microphones](Pictures/timing_diagram.png)
 
+### Overview of the whole processing chain
+
+**TODO: create a diagram of the whole processing chain**
+
 ### Core processing code
 
 The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory (where a fixed size buffer has been allocated by `prussdrv`) and interrupting the host whenever data is ready to be retrieved by the host from its buffer. It is written exclusively in PRU assembly (`pru1.asm` in the project files).
@@ -199,7 +200,7 @@ Since we are using the Octopus board, we have to read data at every edge of the 
 
 In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
 
-**TODO: add a diagram of the two buffer halves, or some kind of state machine**
+![](Pictures/PRU_buffer.png)
 
 Reading the microphones' data is achieved by reading bits of the R31 register, which is connected to the PRU's input pins, to which the microphones' DATA lines are connected. Since we connected the microphones' clock to one of the input pins of the PRU as well, reading its state is done the same way. In order to know when to read the data, the PRU polls the CLK signal until it detects an edge. It then waits for 25 cycles (`t_dv`) and finally reads the data and stores it in a register.
 
