@@ -276,11 +276,13 @@ The biggest challenge faced in this project is probably the lack of clear and or
 
 Apart from the fact that embedded systems is an inherently tough subject that is by far not as popular as more high level programming is (especially about the PRU, which seems to be a piece of hardware very few people use or know about), I think the scarcity of the documentation is probably the greatest factor that makes the learning curve for this project rather steep.
 
-### Limited number of registers and very tight timings on the PRU
+### Limited number of registers and tight timings
 
 On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than TODO: cycles. All of the PRU's registers are used, and the majority of the banks' registers are used as well.
 
-**TODO: add the spectrogram of the weird timing bug on the host side**
+Another challenge was to design the program such that it would not rely on the host too much because of its unpredictable timings and busy nature. Below is an example of a bug we had when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) timing diagram.
+
+![Spectrogram of a signal missing samples as a result of timing issues](Pictures/timing_bug.png)
 
 ## Possible improvements and additional features
 
