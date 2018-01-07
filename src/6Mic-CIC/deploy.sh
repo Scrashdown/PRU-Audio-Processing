@@ -35,7 +35,3 @@ config-pin -q P8.45
 mkdir -p output
 mkdir -p gen
 make
-
-# Start the program
-cd gen
-./main pru1.bin
