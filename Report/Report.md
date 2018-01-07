@@ -188,7 +188,7 @@ Doing this has a drawback however, for each round of processing (processing all 
 
 ### Overview of the whole processing chain
 
-**TODO: create a diagram of the whole processing chain**
+![](Pictures/PRU_processing_chain.png)
 
 ### Core processing code
 
@@ -197,6 +197,8 @@ The core audio processing code, which implements the CIC filter, is running on t
 For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpad as well. It does so by exchanges some of its registers with the scratchpads using the XIN and XOUT instructions.
 
 Since we are using the Octopus board, we have to read data at every edge of the clock. The processing is done in 3 major steps : first we read the data for the channels 1, 2 and 3, process it and output it to the host memory, then we do the same for channels 4, 5 and 6, and finally we interrupt the host to let it know data for all channels is ready. We also have to keep track of several different counters along the way, and also do the correct register exchanges to keep any data from being overwritten. The counters are needed for implementing the decimator, waiting for `t_dv` and keeping track of how many samples have been written to the host's memory, so that it can be interrupted when some data is ready.
+
+**TODO: add timing diagram with processing**
 
 In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
 
@@ -258,8 +260,6 @@ void disable_recording(void);
 ```
 
 The host interface contains several components. The first is a special buffer in the host memory allocated by `prussdrv` which the PRU directly writes to. It contains the data computed by the PRU for all channels. The second component is a larger circular buffer which serves as the main temporary buffer of the interface.
-
-**TODO: add a diagram of the 2 buffers**
 
 When the `pru_processing_init()` function of the API is called, it loads and starts the PRU firmware, and starts a separate thread which handles the recording the samples from the PRU buffer to the bigger circular buffer of the interface. Everytime the PRU has finished writing one half of this buffer, it sends an interrupt to the host and starts writing to the other half. The code of the interrupt sent designates which half of the buffer was filled with fresh data.
 
