@@ -12,7 +12,7 @@ Running the core audio processing code on the PRU instead of the main ARM CPU al
 
 The PRUSS is a module of the ARM CPU used on the BeagleBone Black. It stands for PRU SubSystem, where PRU stands for Programmable Real-time Unit. The PRUSS contains 2 PRUs which are essentially very small and simple 32-bit microprocessors running at 200 MHz and using a custom instruction set. Each PRU has a constant 200 MHz clock rate, 8 kB of instruction memory, 8 kB of data memory, along with 12 kB of data memory shared between the 2 PRUs. They can be programmed either in assembly using the `pasm` assembler or in C using the `clpru` and `lnkpru` tools.
 
-Each PRU has 32, 32-bit registers, where R30 is used for interacting with the PRU's output pins and R31 is used for reading inputs and triggering interrupts by writing to it. Both PRUs also share 3 registers banks, also called scratchpads, which are banks containing 30 additional registers (**TODO: 30 or 32 ?**). Registers can be transferred between the banks and each PRU in one cycle by using specialized assembly instructions. Furthermore, one PRU can also access the register of the other PRU.
+Each PRU has 32, 32-bit registers, where R30 is used for interacting with the PRU's output pins and R31 is used for reading inputs and triggering interrupts by writing to it. Both PRUs also share 3 registers banks, also called scratchpads, which are banks containing 30 additional registers. Registers can be transferred between the banks and each PRU in one cycle by using specialized assembly instructions. Furthermore, one PRU can also access the register of the other PRU.
 
 The PRUs are designed to be as time-deterministic as possible. That is, pretty much all instructions will execute in a constant number of cycles (usually 1, therefore in  5 ns at the 200 MHz clock rate) except for the memory instructions which may vary in execution time.
 
@@ -40,11 +40,11 @@ It is essentially an efficient implementation of a moving-average filter which u
 
 A CIC filter also has a drawback however. Its frequency response is far from the ideal flat response with a sharp cutoff we would like to have. To get a sharper cutoff, it is necessary to append another filter to it, commonly called a compensation filter. That said, since our CIC filter's output is at a lower rate (64 kHz for now) than its input (~ 1.028 MHz), applying this filter after the CIC one will require much less computational resources than applying it on the raw, very high rate input signal from the microphones.
 
-**TODO: include an image of the frequency response**
+![Example power response of the filter](Pictures/CIC_power_resp.png)
 
 Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is `f_s`, the output sample rate will be `f_s / R`. A CIC interpolation filter is very similar, except the comb stages come first, followed by an interpolator of rate R, and finally the integrators.
 
-**TODO: include an image of a CIC decimation filter's structure**
+![Structure of a CIC decimation filter](Pictures/CIC_structure.png)
 
 The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. More detailed explanation will follow in the implementation section of this report. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
 
@@ -128,7 +128,40 @@ If everything went well, the `prussdrv` library and the `pasm` assembler should 
 
 **TODO: perhaps move most of the code deploy.sh to a file called setup.sh, except without starting the main program**
 
-**TODO: include a example of code using the library**
+```C
+/* Example code for using the library. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#include "interface.h"
+
+#define OUTFILE "../output/interface.pcm"
+#define NSAMPLES 64000
+#define NCHANNELS 6
+
+int main(void) {
+    // TODO:
+    FILE * outfile = fopen(OUTFILE, "w");
+    void * tmp_buffer = calloc(NSAMPLES, NCHANNELS * SAMPLE_SIZE_BYTES);
+    pcm_t * pcm = pru_processing_init();
+    
+    struct timespec delay = { 1, 0 };
+    enable_recording();
+        nanosleep(&delay, NULL);
+    disable_recording();
+
+    pcm_read(pcm, tmp_buffer, NSAMPLES, NCHANNELS);
+    pru_processing_close(pcm);
+
+    fwrite(tmp_buffer, NCHANNELS * SAMPLE_SIZE_BYTES, NSAMPLES, outfile);
+
+    fclose(outfile);
+    free(tmp_buffer);
+    return 0;
+}
+
+```
 
 ### Microphones and wiring diagram
 
@@ -259,7 +292,7 @@ It could for example be possible to implement a CIC on both PRUs which would all
 
 The parameters we are currently using for the CIC filter (R = 16, N = 4, M = 1) give a decent frequency response (at least judging by our ear) but require 17 bits per stage of the filter. Tweaking the parameters to achieve 16 bits or less would allow fitting 2 channels in one register which would dramatically reduce the usage of memory resources, both on the PRU and on the host.
 
-### Use of a lookup table (possible with CIC filter which has IIR components ?)
+### Use of a lookup table
 
 Since the PRUs each have some data memory available (8 kB each, with an additional shared 12 kB), it might be more time-efficient to implement the PDM to PCM conversion using a precomputed look-up table stored in memory instead of implementing a CIC filter.
 
