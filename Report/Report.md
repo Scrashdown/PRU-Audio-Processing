@@ -192,6 +192,8 @@ Doing this has a drawback however, for each round of processing (processing all 
 
 ![Overview of the whole processing chain](Pictures/PRU_processing_chain.png)
 
+The code for the main implementation can be found in `src/6Mic-CIC/`.
+
 ### Core processing code
 
 The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory (where a fixed size buffer has been allocated by `prussdrv`) and interrupting the host whenever data is ready to be retrieved by the host from its buffer. It is written exclusively in PRU assembly (`pru1.asm` in the project files). The CIC filter parameters chosen were `N = 4`, `M = 1` and `R = 16`.
@@ -310,6 +312,12 @@ In our case, `f_s ~= 1.028 MHz`, `R = 16` and `B_out' = 32`, which gives `D_out'
 | **32** |  128.5  |
 | **48** |  85.7  |
 | **64** |  64.3  |
+
+#### 1-channel "proof of concept" program
+
+Before writing the 6-channels CIC filter and the C host interface, we wrote a simple, 1-channel, proof of concept program implementing a CIC filter. We then used this code as a base and adapted it for the 6-channels implementation. It can be found in `src/1Mic-CIC/` and run with `sh deploy.sh`. This will start recording from the microphone connected to P8.28 on the BeagleBone and then output the raw resulting PCM to a file in the `src/1Mic-CIC/output/` directory.
+
+It follows the same basic principles as the 6-channels implementation, without scratchpad register exchanges, and waiting for only 1 channel.
 
 ### Host interface and API
 
@@ -435,6 +443,7 @@ As mentioned before, CIC filters are very efficient filters but they lack a flat
     * http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
     * http://www.embedded-things.com/bbb/understanding-bbb-pru-shared-memory-access/
     * http://credentiality2.blogspot.ch/2015/09/beaglebone-pru-gpio-example.html
+    * http://www.ti.com/lit/wp/spry264a/spry264a.pdf
 * Host configuration :
     * http://catch22.eu/beaglebone/beaglebone-pru-uio/
     * https://www.teachmemicro.com/beaglebone-black-pwm-ubuntu-device-tree/
