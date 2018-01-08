@@ -56,8 +56,8 @@
 
 // Persistent registers
 #define IN_PINS r31
-#define BYTE_COUNTER r29
-#define SAMPLE_COUNTER r28
+#define BYTE_COUNTER r28
+#define SAMPLE_COUNTER r0.b1
 #define HOST_MEM r27
 #define HOST_MEM_SIZE r26
 #define XFR_OFFSET r0.b0
