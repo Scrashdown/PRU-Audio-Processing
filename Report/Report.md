@@ -128,6 +128,8 @@ If everything went well, the `prussdrv` library and the `pasm` assembler should 
 
 #### Plug the Octopus board and write some code!
 
+The code for the CIC filter and the interface can be found in `src/6Mic-CIC/`. To write and run some code like the one below, write it to a file called `main.c` in `host/`, then run `sh deploy.sh && ./gen/main`.
+
 ```C
 /* Example code for using the library. */
 #include <stdio.h>
@@ -192,8 +194,6 @@ Doing this has a drawback however, for each round of processing (processing all 
 
 ![Overview of the whole processing chain](Pictures/PRU_processing_chain.png)
 
-The code for the main implementation can be found in `src/6Mic-CIC/`.
-
 ### Core processing code
 
 The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory (where a fixed size buffer has been allocated by `prussdrv`) and interrupting the host whenever data is ready to be retrieved by the host from its buffer. It is written exclusively in PRU assembly (`pru1.asm` in the project files). The CIC filter parameters chosen were `N = 4`, `M = 1` and `R = 16`.
@@ -231,8 +231,8 @@ Since we are using the Octopus board, we have to read data at every edge of the 
 
 In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
 
-![Timing diagram of the processing times with mic multiplexing](Pictures/PRU_timing_diagram_mic_multiplexing.svg)
-![Timing diagram of the processing times without mic multiplexing](Pictures/PRU_timing_diagram_no_mic_multiplexing.svg)
+![Timing diagram of the processing times with mic multiplexing](Pictures/PRU_timing_diagram_mic_multiplexing.png)
+![Timing diagram of the processing times without mic multiplexing](Pictures/PRU_timing_diagram_no_mic_multiplexing.png)
 
 As mentioned above, multiplexing 2 microphones on 1 input pin reduces the available processing time, as can be seen on the diagrams above.
 
@@ -317,7 +317,9 @@ In our case, `f_s ~= 1.028 MHz`, `R = 16` and `B_out' = 32`, which gives `D_out'
 
 Before writing the 6-channels CIC filter and the C host interface, we wrote a simple, 1-channel, proof of concept program implementing a CIC filter. We then used this code as a base and adapted it for the 6-channels implementation. It can be found in `src/1Mic-CIC/` and run with `sh deploy.sh`. This will start recording from the microphone connected to P8.28 on the BeagleBone and then output the raw resulting PCM to a file in the `src/1Mic-CIC/output/` directory.
 
-It follows the same basic principles as the 6-channels implementation, without scratchpad register exchanges, and waiting for only 1 channel.
+It follows the same basic principles as the 6-channels implementation, without scratchpad register exchanges, and waiting for only 1 channel instead of 6.
+
+This implementation works and allowed us to have an idea of how the output of a channel sounds like with different parameters.
 
 ### Host interface and API
 
