@@ -38,7 +38,9 @@ Because we wanted to run this filter on the PRU with rather tight timing constra
 
 It is essentially an efficient implementation of a moving-average filter which uses only additions and subtractions and also has a finite impulse response (FIR). Although the PRU is capable of performing unsigned integer multiplications (required by other types of FIR filters) by using its Multiply and Accumulate Unit, they take several more cycles to execute than the one-cycle instructions used for regular additions and subtractions. Since our goal is to handle several channels at once with very tight timing constraints, computational savings really matter.
 
-A CIC filter also has a drawback however. Its frequency response is far from the ideal flat response with a sharp cutoff we would like to have. To get a sharper cutoff, it is necessary to append another filter to it, commonly called a compensation filter. That said, since our CIC filter's output is at a lower rate (64 kHz for now) than its input (~ 1.028 MHz), applying this filter after the CIC one will require much less computational resources than applying it on the raw, very high rate input signal from the microphones.
+A CIC filter also has a drawback however. Its frequency response is far from the ideal flat response with a sharp cutoff we would like to have. To get a sharper cutoff, it is necessary to append another filter to it, commonly called a compensation filter. That said, since a CIC filter's output is usually at a much lower rate (64 kHz for now) than its input (~ 1.028 MHz), applying this filter after the CIC one will require much less computational resources than applying it on the raw, very high rate input signal from the microphones.
+
+In general, CIC filters are well suited as an efficient first filtering step, which efficiently downsamples the signal and gets rid of some of the higher frequencies. The reduced sample rate of the output reduces the computational power needed for additional FIR compensation filters, and therefore compensates their higher complexity.
 
 ![Example power response of the filter](Pictures/CIC_power_resp.png)
 
@@ -242,15 +244,15 @@ This register is the first integrator in the CIC filter and all subsequent integ
 
 In the current design, we use only registers to store all values involved in the CIC filter computation. Each PRU has 32 registers `(r0-r31)`, but in practice only 30 are usable. This is because `r30` and `r31` are reserved for interacting with GPIO and triggering interrupts.
 
-Furthermore, since we use the PRU's additional register banks, we cannot use all the bits of `r0`, because the value of the first byte of `r0` is used as an offset value for register exchanges with the banks.
+Furthermore, since we use the PRU's 3 additional register banks, we cannot use all the bits of `r0`, because the value of the first byte of `r0` is used as an offset value for register exchanges with the banks.
 
-Another thing we need to take into account is that, apart from channel private data (values involved in the CIC filter computations for each channel), we also need to keep track of some channel _independent_ data : a byte counter to keep track of the number of bytes written in the host buffer, a sample counter to implement decimation, the host buffer's size and address and temporary values used for delaying and processing input.
+Another thing we need to take into account is that, apart from channel private data (values involved in the CIC filter computations for each channel), we also need to keep track of some channel _independent_ data : a byte counter to keep track of the number of bytes written in the host buffer, a sample counter to implement decimation, the host buffer's size and address and temporary values used for delaying and processing input. This data has to stay on the PRU at all times.
 
 We can fit the decimation counter in a single byte, as long as it does not exceed 255. However, the byte counter needs a complete register. The host's buffer size and address also each need one complete register. Finally, to store the temporary values that are a delay counter and the state of the PRU input pins.
 
 Also, in our implementation, even though we have 6 channels, we only have 3 output registers. After filling the 3 registers, their contents are written to the host buffer and they can be used to store new inputs.
 
-We store all this information the following way :
+We store all this information on PRU1 the following way :
 
 * **r0** : scratchpad offset (bits 0-7), decimation counter (bits 8-15), delay counter / temporary storage for inputs (bits 16-31)
 * **r23, r24, r25** : temporary storage for outputs of the filter, could be only one register, but this would add more memory operations which would add overhead
@@ -285,7 +287,9 @@ This, along with the 7 registers holding channel independent data on PRU1, gives
 | **6** |   |19 |37 |55 | 73 |91 |
 | **8** |   |23 |47 |71 | 95 |119|
 
-We also want to figure out the data rate of the fiter's output. To do this, using the following formula described in Hogenhauer's paper we first compute the output bit width `B_out`. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers contain 32 bits and it is easier to write the data in 32 bits chunks. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
+An important thing to note is that the PRU is supposed to support the XCHG instruction, which exchanges registers from the PRU to one of the banks in one cycle. Unfortunately, it does not work. Only the XIN and XOUT instructions currently work. This means that we always need to keep `n_reg_private` (11) registers free to act as a temporary storage place. The PRU's registers handle this task.
+
+We also want to figure out the data rate of the fiter's output. To do this, using the formula desribed earlier, we first compute the output bit width `B_out`. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers are 32 bits wide and it is more convenient to write the data in 32 bits chunks. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
 
 	D_out = B_out * f_s / R
 
@@ -293,17 +297,17 @@ Or using the `B_out'` :
 
 	D_out' = B_out' * f_s / R
 
-In our case, `f_s ~= 1.028 MHz`, `R = 16` and `B_out' = 32`, which gives `D_out' = 2.04 Mb/s = 255 kB/s`.
+In our case, `f_s ~= 1.028 MHz`, `R = 16` and `B_out' = 32`, which gives `D_out' = 2.056 Mb/s = 257 kB/s`.
 
-##### Output data rate (Mb / s) for 1 channel, given `R` (`M = 1`, `B_out' = 32`)
+##### Output data rate (kB / s) for 1 channel, given `R` (`M = 1`, `B_out' = 32`)
 
-|        |  N  |
+|        |  `D_out' (kB / s)`  |
 |---     |:---:|
 | **R**  |     |
-| **16** |     |
-| **32** |     |
-| **48** |     |
-| **64** |     |
+| **16** |  257  |
+| **32** |  128.5  |
+| **48** |  85.7  |
+| **64** |  64.3  |
 
 ### Host interface and API
 
@@ -366,6 +370,10 @@ The circular buffer is similar to a queue but with a fixed length. Its API provi
 
 The `pcm_read` function provided by the API pops the number of samples required by the user from the circular buffer, then extracts only the number of channels the user asks for, and finally outputs this data to the user provided buffer.
 
+## Results
+
+**TODO**
+
 ## Challenges faced
 
 ### Lack of documentation and the existence of 2, different drivers
@@ -376,7 +384,7 @@ Apart from the fact that embedded systems is an inherently tough subject that is
 
 ### Limited number of registers and tight timings
 
-On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than 144 cycles. All of the PRU's registers are used, and the majority of the banks' registers are used as well.
+On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than 144 cycles. All except one the PRU's registers are used, and the majority of the banks' registers are used as well.
 
 Another challenge was to design the program such that it would not rely on the host too much because of its unpredictable timings and busy nature. Below is an example of a bug that happened when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) timing diagram.
 
