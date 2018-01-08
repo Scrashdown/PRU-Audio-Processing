@@ -192,7 +192,7 @@ Doing this has a drawback however, for each round of processing (processing all 
 
 ### Core processing code
 
-The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory (where a fixed size buffer has been allocated by `prussdrv`) and interrupting the host whenever data is ready to be retrieved by the host from its buffer. It is written exclusively in PRU assembly (`pru1.asm` in the project files).
+The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory (where a fixed size buffer has been allocated by `prussdrv`) and interrupting the host whenever data is ready to be retrieved by the host from its buffer. It is written exclusively in PRU assembly (`pru1.asm` in the project files). The CIC filter parameters chosen were `N = 4`, `M = 1` and `R = 16`.
 
 For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpads as well. It does so by exchanging some of its registers with the scratchpads using the XIN and XOUT instructions. We have to keep track of several different counters along the way, and also do the correct register exchanges with the scratchpads to keep any data from being overwritten. The counters are needed for implementing the decimator, waiting for `t_dv` and keeping track of how many samples have been written to the host's memory, so that it can be interrupted when some data is ready.
 
@@ -200,7 +200,7 @@ Since we are using the Octopus board, we have to read data at every edge of the 
 
 * Read data from channels 1-3, process it and output the results to the host buffer. Details :
     * Load chan. 1, 2 registers from BANK0 (scratchpad).
-    * Wait for rising edge, then `t_dv`, then wait for chan. 1, 2 data.
+    * Wait for rising edge, then wait for chan. 1, 2 data.
     * Read chan. 1, 2 input data.
     * Perform one iteration of the filter.
         * If the oversampling counter reached R, execute the comb stages and store chan 1, 2 outputs in registers.
@@ -212,7 +212,7 @@ Since we are using the Octopus board, we have to read data at every edge of the 
     * Store chan. 3 registers to BANK1.
 * Same for channels 4-6. Details :
     * Load chan. 4, 5 registers from BANK1 and BANK2.
-    * Wait for rising edge, then `t_dv`, then wait for chan. 4, 5 data.
+    * Wait for rising edge, then wait for chan. 4, 5 data.
     * Read chan. 4, 5 input data.
     * Perform one iteration of the filter.
         * If the oversampling counter reached R, execute the comb stages and store chan 4, 5 outputs in registers.
@@ -230,7 +230,7 @@ In order to allow the host to retrieve all the samples before the PRU overwrites
 ![Timing diagram of the processing times with mic multiplexing](Pictures/PRU_timing_diagram_mic_multiplexing.svg)
 ![Timing diagram of the processing times without mic multiplexing](Pictures/PRU_timing_diagram_no_mic_multiplexing.svg)
 
-As mentioned above, multiplexing 2 microphones on 1 input pin reduces the available processing time.
+As mentioned above, multiplexing 2 microphones on 1 input pin reduces the available processing time, as can be seen on the diagrams above.
 
 ![](Pictures/PRU_buffer.png)
 
@@ -368,7 +368,7 @@ The `pcm_read` function provided by the API pops the number of samples required 
 
 ## Challenges faced
 
-### Lack of documentation and the existence of 2, very different drivers
+### Lack of documentation and the existence of 2, different drivers
 
 The biggest challenge faced in this project is probably the lack of clear and organized documentation about how to run code on the PRU from the Linux host, how to configure the operating system so that the BeagleBone's pins can be multiplexed to the PRU, how to choose which driver to use, and finally how to configure the BeagleBone for it to work. Most of the documentation and examples are scarce, sometimes outdated and scattered across multiple websites which forced us to do a lot of trial and errors on things such has how to enable drivers or the right interrupts between the host and the PRU.
 
@@ -378,7 +378,7 @@ Apart from the fact that embedded systems is an inherently tough subject that is
 
 On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than 144 cycles. All of the PRU's registers are used, and the majority of the banks' registers are used as well.
 
-Another challenge was to design the program such that it would not rely on the host too much because of its unpredictable timings and busy nature. Below is an example of a bug we had when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) timing diagram.
+Another challenge was to design the program such that it would not rely on the host too much because of its unpredictable timings and busy nature. Below is an example of a bug that happened when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) timing diagram.
 
 ![Spectrogram of a signal missing samples as a result of timing issues](Pictures/timing_bug.png)
 
