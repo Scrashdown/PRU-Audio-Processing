@@ -53,7 +53,7 @@ The filter's resource usage depends on its parameters, the platform on which it 
 
 Finally, some important things to know about CIC decimation filters is that overflows will occur in the integrator stages, however, the output of the filter will still be correct if each stage follows modular arithmetic rules (PRU registers do, since they can overflow and loop back to zero) and if each stage has a bit width large enough that it can support the maximum value expected at the end of the filter. To check the second condition, a formula exists to find out about the required bit width of the stages for the filter to be correct :
 
-$$B_{out} = \lceil Nlog_2RM + B_{in} \rceil$$
+    B_out = ceil(Nlog2(RM) + B_in)
 
 Where $B_in$ is the bit width of the filter's input (in our case 1 bit), M, N and R are the filter's parameters, and $B_{out}$ is the required bit width for all stages of the filter.
 
@@ -228,26 +228,34 @@ We store all this information the following way :
 * **r27** : host buffer physical address
 * **r28** : written bytes counter
 
-The remaining registers can be used for storing channel private data. In order to figure out how many registers we need, we can use the following formula `(M = 1)` :
+The remaining registers can be used for storing channel private data. In order to figure out how many registers we need for this, assuming one register is wide enough to hold the expected values (see the formula above to check the required bit width), we can use the following formula `(M = 1)` :
 
-	n_reg = C * (2N + 1 + N - 1) = 3CN
+	n_reg_private = C * (N + 1 + N - 1 + N - 1) = C * (3N - 1)
 
 With `M != 1`:
 
-	// TODO
+	n_reg_private = C * (N + 1 + 2M * (N - 1))
 
-Where `C` is the number of channels, `N` is the number of integrator and comb stages in the filter (that is, `N` integrators and `N` combs, `M` is the number of samples per stage of the filter (usually `M = 1`) and `R` is the decimation rate. If the filter's input is at frequency `f_s`, its output will be at frequency `f_s / R`.
-It is therefore obvious that `R` has no influence on the filter's register usage. However, `R` influences the filter's output data rate.
+Where C is the number of channels, N and M are the parameters of the CIC filter. It is therefore obvious that `R` has no influence on the filter's register usage. However, `R` influences the filter's output data rate. In our case, `C = 6`, `M = 1`, `N = 4` and `R = 16`, so `n_reg_private = 66`.
 
-In our case, `C = 6`, `M = 1`, `N = 4` and `R = 16`, so `n_reg = 72`. However, this is assuming we use 1 output register per channel and write them all at once to the buffer, which requires 6 registers in this case. To spare registers, we use 3 registers for 6 channels and write the outputs to the host in 2 steps, so we can reduce `n_reg` to 69. Using this strategy, we can modify our formula the following way :
+> Note that different parameters may allow for fitting more than one channel in a single register, which would change the above formula and dramatically reduce the amount of registers needed.
 
-	n_reg = 3CN - 3 = 3*(CN - 1)
+This, along with the 7 registers holding channel independent data on PRU1, gives us the total register usage :
 
-We also want to figure out the data rate of the fiter's output. To do this, we need to compute the output's bit width using the following formula described in Hogenhauer's paper :
+    n_reg_tot = C(3N - 1) + 7 = 66 + 7 = 73
 
-	B_out = ceil(Nlog2(RM) + B_in)
+##### Total number of registers required given `N` and `C` (`M = 1`) (assuming bit width of 32 is enough)
 
-Where `B_in` is the input bit width. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers contain 32 bits and it is easier to write the data in chunks of which the size is a multiple of 8. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
+|       | N | 1 | 2 | 3 | 4  | 5 |
+|---    |---|---|---|---|--- |---|
+| **C** |   |   |   |   |    |   |
+| **1** |   | 9 |12 |15 | 18 |21 |
+| **2** |   |11 |17 |23 | 29 |35 |
+| **3** |   |13 |22 |31 | 40 |49 |
+| **6** |   |19 |37 |55 | 73 |91 |
+| **8** |   |23 |47 |71 | 95 |119|
+
+We also want to figure out the data rate of the fiter's output. To do this, using the following formula described in Hogenhauer's paper we first compute the output bit width `B_out`. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers contain 32 bits and it is easier to write the data in 32 bits chunks. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
 
 	D_out = B_out * f_s / R
 
@@ -255,18 +263,7 @@ Or using the `B_out'` :
 
 	D_out' = B_out' * f_s / R
 
-In our case, `f_s ~= 1.02 MHz`, `R = 16` and `B_out' = 32`, which gives `D_out' = 2.04 Mb/s = 255 kB/s`.
-
-##### Number of registers required given `N` and `C` (`M = 1`)
-
-|       | N | 1 | 2 | 3 | 4  | 5 |
-|---    |---|---|---|---|--- |---|
-| **C** |   |   |   |   |    |   |
-| **1** |   |   |   |   | 11 |   |
-| **2** |   |   |   |   |    |   |
-| **3** |   |   |   |   |    |   |
-| **6** |   |   |   |   |    |   |
-| **8** |   |   |   |   |    |   |
+In our case, `f_s ~= 1.028 MHz`, `R = 16` and `B_out' = 32`, which gives `D_out' = 2.04 Mb/s = 255 kB/s`.
 
 ##### Output data rate (Mb / s) for 1 channel, given `N` and `R` (`M = 1`)
 
