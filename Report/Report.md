@@ -198,14 +198,39 @@ For performance reasons, the PRU uses registers to store the data of each stage 
 
 Since we are using the Octopus board, we have to read data at every edge of the clock. The processing is done in several steps :
 
-* Read data from channels 1-3, process it and output the results to the host buffer
-* Same for channels 4-6
+* Read data from channels 1-3, process it and output the results to the host buffer. Details :
+    * Load chan. 1, 2 registers from BANK0 (scratchpad).
+    * Wait for rising edge, then `t_dv`, then wait for chan. 1, 2 data.
+    * Read chan. 1, 2 input data.
+    * Perform one iteration of the filter.
+        * If the oversampling counter reached R, execute the comb stages and store chan 1, 2 outputs in registers.
+    * Store chan. 1, 2 registers to BANK0 and load chan. 3 from BANK1.
+    * Read chan. 3 input data.
+    * Perform one iteration of the filter.
+        * If the oversampling counter reached R, execute the comb stages and store chan 3 output in a register.
+    * Write chan. 1-3 outputs to host buffer.
+    * Store chan. 3 registers to BANK1.
+* Same for channels 4-6. Details :
+    * Load chan. 4, 5 registers from BANK1 and BANK2.
+    * Wait for rising edge, then `t_dv`, then wait for chan. 4, 5 data.
+    * Read chan. 4, 5 input data.
+    * Perform one iteration of the filter.
+        * If the oversampling counter reached R, execute the comb stages and store chan 4, 5 outputs in registers.
+    * Store chan. 4, 5 registers to BANK1 and BANK2 and load chan. 6 from BANK2.
+    * Read chan. 6 input data.
+    * Perform one iteration of the filter.
+        * If the oversampling counter reached R, execute the comb stages and store chan 6 output in a register.
+    * Write chan. 4-6 outputs to host buffer.
+    * Store chan. 6 registers to BANK2.
 * Increment the written bytes counter. If the end of the buffer has been reached, send interrupt 1 to the host and start writing to the beginning of the buffer again. If the middle of the buffer has just been reached, send interrupt 0 to the host and continue writing.
+* Loop back to the beginning.
+
+In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
 
 ![Timing diagram of the processing times with mic multiplexing](Pictures/PRU_timing_diagram_mic_multiplexing.svg)
 ![Timing diagram of the processing times without mic multiplexing](Pictures/PRU_timing_diagram_no_mic_multiplexing.svg)
 
-In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
+As mentioned above, multiplexing 2 microphones on 1 input pin reduces the available processing time.
 
 ![](Pictures/PRU_buffer.png)
 
