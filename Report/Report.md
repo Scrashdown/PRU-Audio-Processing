@@ -291,7 +291,7 @@ This, along with the 7 registers holding channel independent data on PRU1, gives
 
 An important thing to note is that the PRU is supposed to support the XCHG instruction, which exchanges registers from the PRU to one of the banks in one cycle. Unfortunately, it does not work. Only the XIN and XOUT instructions currently work. This means that we always need to keep `n_reg_private` (11) registers free to act as a temporary storage place. The PRU's registers handle this task.
 
-With the current parameters, storing all data on the PRU leaves one free register : r29.
+With the current parameters, storing all data on the PRU leaves one free register : r29. Registers r1-r22 are used for channel private data and are the ones exchanged with the scratchpads.
 
 We also want to figure out the data rate of the fiter's output. To do this, using the formula desribed earlier, we first compute the output bit width `B_out`. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers are 32 bits wide and it is more convenient to write the data in 32 bits chunks. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
 
@@ -319,7 +319,7 @@ Before writing the 6-channels CIC filter and the C host interface, we wrote a si
 
 It follows the same basic principles as the 6-channels implementation, without scratchpad register exchanges, and waiting for only 1 channel instead of 6.
 
-This implementation works and allowed us to have an idea of how the output of a channel sounds like with different parameters.
+This implementation works and allowed us to have an idea of how the output of a channel sounds like with different parameters. The PCM signal can be converted to a wav file using the `PCMtoWAV.py` script in `wav_conv/`.
 
 ### Host interface and API
 
@@ -384,6 +384,18 @@ The `pcm_read` function provided by the API pops the number of samples required 
 
 ## Results
 
+### Single channel implementation
+
+The single channel implementation works and shows that it is possible to implement a CIC filter on the PRU and rely on PRU writes to the host memory. With the following parameters (N = 4, M = 1, R = 16), we were able to get a moderately noisy but intelligible signal.
+
+It is worth noting that using one channel, the timing constraints are much less tight since there is much less processing to be done. This leaves more freedom in choosing the parameters. For example, higher input sample rates (compared to the 6-channel 1.028 MHz) are achievable.
+
+### 6-channels implementation
+
+**TODO**
+
+### C Host interface
+
 **TODO**
 
 ### Challenges faced
@@ -433,8 +445,6 @@ As mentioned before, CIC filters are very efficient filters but they lack a flat
 **TODO**
 
 ## Sources and bibliography
-
-**TODO**
 
 * CIC Filter theory :
     * Hogenauer, Eugene. _"An Economical Class of Digital Filters For Decimation and Interpolation"_
