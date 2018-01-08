@@ -198,7 +198,8 @@ For performance reasons, the PRU uses registers to store the data of each stage 
 
 Since we are using the Octopus board, we have to read data at every edge of the clock. The processing is done in 3 major steps : first we read the data for the channels 1, 2 and 3, process it and output it to the host memory, then we do the same for channels 4, 5 and 6, and finally we interrupt the host to let it know data for all channels is ready. We also have to keep track of several different counters along the way, and also do the correct register exchanges to keep any data from being overwritten. The counters are needed for implementing the decimator, waiting for `t_dv` and keeping track of how many samples have been written to the host's memory, so that it can be interrupted when some data is ready.
 
-![Timing diagram of the processing times](Pictures/PRU_timing_diagram.png)
+![Timing diagram of the processing times with mic multiplexing](Pictures/PRU_timing_diagram_mic_multiplexing.svg)
+![Timing diagram of the processing times without mic multiplexing](Pictures/PRU_timing_diagram_no_mic_multiplexing.svg)
 
 In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
 
