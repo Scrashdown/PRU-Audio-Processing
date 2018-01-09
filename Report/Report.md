@@ -442,7 +442,9 @@ As mentioned before, CIC filters are very efficient filters but they lack a flat
 
 ## Acknowledgments
 
-I would like to offer my special thanks to Eric Bezzam for his continuous assistance throughout the semester. He provided with with valuable explanations about some of the signal processing theory and nomenclature, which made understanding the motivation and goals of the project easier for me. He also greatly helped me by writing some useful little programs for converting PCM signals to WAV, plotting the filter's power response, and analizing timings in the PRU.
+I would like to offer my special thanks to Eric Bezzam for his continuous assistance throughout the semester. He provided me with valuable explanations about some of the signal processing theory and nomenclature, which made understanding the motivation and goals of the project easier for me. He also greatly helped me by writing some useful little programs for converting PCM signals to WAV, plotting the filter's power response, and analizing timings in the PRU.
+
+I would also like to thank Robin Scheibler, my supervisor for this project, for his valuable pieces of advice he gave throughout the project.
 
 I would like to also thank the people who were there at the midterm presentation for their valuable remarks and advices, such as the idea of using a look-up table for the filter.
 
