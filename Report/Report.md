@@ -386,7 +386,7 @@ The `pcm_read` function provided by the API pops the number of samples required 
 
 ### Single channel implementation
 
-The single channel implementation works and shows that it is possible to implement a CIC filter on the PRU and rely on PRU writes to the host memory. With the following parameters (N = 4, M = 1, R = 16), we were able to get a moderately noisy but intelligible signal.
+The single channel implementation works and shows that it is possible to implement a CIC filter on the PRU and rely on PRU writes to the host memory. With the following parameters (N = 4, M = 1, R = 16), we were able to get a moderately noisy but intelligible signal at a sample rate of 64 kHz.
 
 It is worth noting that using one channel, the timing constraints are much less tight since there is much less processing to be done. This leaves more freedom in choosing the parameters. For example, higher input sample rates (compared to the 6-channel 1.028 MHz) are achievable.
 
@@ -442,7 +442,9 @@ As mentioned before, CIC filters are very efficient filters but they lack a flat
 
 ## Acknowledgments
 
-**TODO**
+I would like to offer my special thanks to Eric Bezzam for his continuous assistance throughout the semester. He provided with with valuable explanations about some of the signal processing theory and nomenclature, which made understanding the motivation and goals of the project easier for me. He also greatly helped me by writing some useful little programs for converting PCM signals to WAV, plotting the filter's power response, and analizing timings in the PRU.
+
+I would like to also thank the people who were there at the midterm presentation for their valuable remarks and advices, such as the idea of using a look-up table for the filter.
 
 ## Sources and bibliography
 
