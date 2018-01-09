@@ -39,34 +39,40 @@ void *processing_routine(void * __args)
 
     int next_evt = PRU_EVTOUT_0;
     volatile void * new_data_start;
+    int overflow_flag;
+
+    const volatile void * buffer_beginning = args.pcm -> PRU_buffer;
+    const volatile void * buffer_middle = &(((uint8_t *) args.pcm -> PRU_buffer)[args.pcm -> PRU_buffer_len / 2]);
 
     // Process indefinitely
     while (1) {
         prussdrv_pru_wait_event(next_evt);
         if (next_evt == PRU_EVTOUT_0) {
+            // Even though we are using PRU1, I have to use PRU0_ARM_INTERRUPT in this case for it to work.
+            // I truly have no clue of why this is happening.
             prussdrv_pru_clear_event(next_evt, PRU0_ARM_INTERRUPT);
             next_evt = PRU_EVTOUT_1;
-            new_data_start = args.pcm -> PRU_buffer;
+            new_data_start = buffer_beginning;
         } else {
             prussdrv_pru_clear_event(next_evt, PRU1_ARM_INTERRUPT);
             next_evt = PRU_EVTOUT_0;
-            new_data_start = &(((uint8_t *) args.pcm -> PRU_buffer)[args.pcm -> PRU_buffer_len / 2]);
+            new_data_start = buffer_middle;
         }
 
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
             // Size of one 6-channel sample tuple, in bytes
-            size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
+            const size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
             // Number of these blocks to retrieve, must correspond to half of the PRU buffer length
-            size_t block_count = (args.pcm -> PRU_buffer_len) / block_size / 2;
+            const size_t block_count = (args.pcm -> PRU_buffer_len) / block_size / 2;
             pthread_mutex_lock(&ringbuf_mutex);
             // Write data to the ringbuffer
-            size_t written = ringbuf_push(args.pcm -> main_buffer, (uint8_t *) new_data_start, block_size, block_count);
+            const size_t written = ringbuf_push(args.pcm -> main_buffer, (uint8_t *) new_data_start, block_size, block_count, &overflow_flag);
             pthread_mutex_unlock(&ringbuf_mutex);
 
-            if (written != block_count) {
+            if (overflow_flag) {
                 // TODO: Output a warning of some sort
-                fprintf(stderr, "Warning! Buffer overflow, some samples could not be written.\n");
+                fprintf(stderr, "Warning! Buffer overflow, some samples have been overwritten.\n");
             }
         }
 
@@ -83,23 +89,8 @@ void *processing_routine(void * __args)
 // TODO: add the possibility of adding a filter between the PRU buffer and and the main buffer
 pcm_t * pru_processing_init(void)
 {
-    // Check if number of channels makes sense
-    /*
-    if (nchan < MIN_NCHAN || nchan > MAX_NCHAN) {
-        fprintf(stderr, "Error! Number of channels must between 1 and 6 (included), actual = %zu\n", nchan);
-        return NULL;
-    }
-
-    // Check if sample rate is valid
-    if (sample_rate < MIN_SAMPLE_RATE_HZ || sample_rate > MAX_SAMPLE_RATE_HZ) {
-        fprintf(stderr, 
-            "Error! Sample rate in Hz must be between %zu and %zu (included), actual = %zu\n", 
-            MIN_SAMPLE_RATE_HZ, MAX_SAMPLE_RATE_HZ, sample_rate);
-        return NULL;
-    }*/
-
     // Allocate memory for the PCM
-    pcm_t * pcm = calloc(1, sizeof(pcm_t));
+    const pcm_t * pcm = calloc(1, sizeof(pcm_t));
     if (pcm == NULL) {
         fprintf(stderr, "Error! Memory for pcm could not be allocated.\n");
         return NULL;
@@ -112,7 +103,7 @@ pcm_t * pru_processing_init(void)
     }
 
     // Initialize ringbuffer
-    ringbuffer_t * ringbuf = ringbuf_create(pcm -> PRU_buffer_len, SUB_BUF_NB);
+    const ringbuffer_t * ringbuf = ringbuf_create(pcm -> PRU_buffer_len, SUB_BUF_NB);
     if (ringbuf == NULL) {
         free(pcm);
         return NULL;
@@ -155,9 +146,9 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     }
 
     // Extract raw data to temporary buffer
-    size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
+    const size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
     // TODO: use stack or heap for this ?
-    uint8_t * raw_data = calloc(nsamples, block_size);
+    const uint8_t * raw_data = calloc(nsamples, block_size);
     if (raw_data == NULL) {
         fprintf(stderr, "Error! Could not allocate temporary buffer for raw data.\n");
         return 0;
@@ -165,7 +156,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 
     pthread_mutex_lock(&ringbuf_mutex);
     // Read data from the ringbuffer
-    size_t read = ringbuf_pop(args.pcm -> main_buffer, raw_data, block_size, nsamples);
+    const size_t read = ringbuf_pop(args.pcm -> main_buffer, raw_data, block_size, nsamples);
     pthread_mutex_unlock(&ringbuf_mutex);
 
     if (read != nsamples) {
@@ -173,7 +164,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     }
 
     // Extract only the channels we are interested in, and apply some filter
-    uint8_t * dst_bytes = (uint8_t *) dst;
+    const uint8_t * dst_bytes = (const uint8_t *) dst;
     for (size_t s = 0; s < read; ++s) {
         // Only extract the first nchan channels
         memcpy(&dst_bytes[SAMPLE_SIZE_BYTES * nchan * s], &raw_data[block_size * s], SAMPLE_SIZE_BYTES * nchan);

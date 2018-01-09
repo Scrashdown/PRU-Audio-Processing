@@ -38,15 +38,16 @@ void ringbuf_free(ringbuffer_t * ringbuf);
 // TODO: return the number of samples actually written/read
 
 /**
- * @brief Push data to the ringbuffer.
+ * @brief Push data to the ringbuffer. Overwrites oldest data in case of an overflow.
  * 
  * @param dst The ringbuffer to which data must be pushed.
  * @param data The data to push.
  * @param block_size The size of each block of data.
  * @param block_count The number of blocks to push.
+ * @param overflow_flag This flag is set to 1 in case of an overflow, 0 otherwise.
  * @return size_t The number of blocks effectively written.
  */
-size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_t block_count);
+size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_t block_count, int * overflow_flag);
 
 /**
  * @brief Pop data from the ringbuffer.
