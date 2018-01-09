@@ -26,9 +26,9 @@ That said, it seems `uio_pruss` is currently being phased out of support by Texa
 
 As mentioned earlier, we are using microphones with a 1-bit wide output at a very high sample rate (> 1 MHz). The signal these microphones input is a PDM (Pulse Density Modulation) signal which is of an unusual type and needs to be converted to a lower-rate PCM (Pulse-Code Modulation) signal, which is much more commonly used for storing audio data.
 
-![Illustration of a PCM](https://upload.wikimedia.org/wikipedia/commons/b/bf/Pcm.svg)
+![Illustration of a PCM (CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=635225)](Pictures/PCM.png)
 
-![Illustration of a PDM](https://upload.wikimedia.org/wikipedia/commons/2/20/Pulse-density_modulation_1_period.gif)
+![Illustration of a PDM](Pictures/PDM.gif)
 
 In a PCM signal, each value represents its amplitude on a fixed scale at a fixed time. However, in a PDM signal, its amplitude at a given time is represented by the density of 1's relative to 0's at the said time. Converting a PDM signal to a PCM signal therefore requires using some kind of a moving-average filter.
 
@@ -55,9 +55,9 @@ The filter's resource usage depends on its parameters, the platform on which it 
 
 Finally, some important things to know about CIC decimation filters is that overflows will occur in the integrator stages. However, the output of the filter will still be correct if each stage follows modular arithmetic rules (PRU registers do, since they can overflow and loop back to zero) and if each stage has a bit width large enough that it can support the maximum value expected at the end of the filter. To check the second condition, a formula exists to find out about the required bit width of the stages for the filter to be correct (described in Hogenhauer's paper) :
 
-    B_out = ceil(Nlog2(RM) + B_in)
+$$B_{out} = \lceil Nlog_2(RM) + B_{in} \rceil$$
 
-Where $B_in$ is the bit width of the filter's input (in our case 1 bit), M, N and R are the filter's parameters, and $B_{out}$ is the required bit width for all stages of the filter.
+Where $B_{in}$ is the bit width of the filter's input (in our case 1 bit), M, N and R are the filter's parameters, and $B_{out}$ is the required bit width for all stages of the filter.
 
 ## Documentation
 
