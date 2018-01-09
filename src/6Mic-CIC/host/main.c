@@ -37,6 +37,7 @@ int main(void) {
     enable_recording();
         nanosleep(&delay, NULL);
     disable_recording();
+    fflush(stdout);
     printf("Length of the ringbuffer after recording: %zu (maxLength = %zu)\n", ringbuf_len(pcm -> main_buffer), pcm -> main_buffer -> maxLength);
 
     pcm_read(pcm, tmp_buffer, NSAMPLES, NCHANNELS);

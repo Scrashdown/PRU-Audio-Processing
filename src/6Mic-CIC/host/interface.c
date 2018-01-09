@@ -51,14 +51,14 @@ void *processing_routine(void * __args)
     // Process indefinitely
     while (1) {
         prussdrv_pru_wait_event(next_evt);
-        prussdrv_pru_clear_event(next_evt, PRU1_ARM_INTERRUPT);
-        
         if (next_evt == PRU_EVTOUT_0) {
             printf("INT0\n");
+            prussdrv_pru_clear_event(next_evt, PRU0_ARM_INTERRUPT);
             next_evt = PRU_EVTOUT_1;
             new_data_start = args.host_datain_buffer;
         } else {
             printf("INT1\n");
+            prussdrv_pru_clear_event(next_evt, PRU1_ARM_INTERRUPT);
             next_evt = PRU_EVTOUT_0;
             new_data_start = args.host_datain_buffer + args.host_datain_buffer_len / 2;
         }
