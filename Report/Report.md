@@ -1,4 +1,4 @@
-# Project report stub
+# Audio processing on the BeagleBone Black's Programmable Real-time Unit
 
 ## Introduction / Motivation
 
@@ -392,11 +392,11 @@ It is worth noting that using one channel, the timing constraints are much less 
 
 ### 6-channels implementation
 
-**TODO**
+**TODO:**
 
 ### C Host interface
 
-**TODO**
+**TODO:**
 
 ### Challenges faced
 
@@ -438,7 +438,7 @@ An improvement could be to let the user choose how many channels he intends to u
 
 #### Introduce further filtering on the host side
 
-As mentioned before, CIC filters are very efficient filters but they lack a flat frequency response with a sharp cutoff and we need an additional compensation filter appended after them to get a better response. The current implementation of the host interface does implement such a filter yet but this is a possible and probably very useful improvement that could be made. A nice feature to have could be to make it modular such that it can accept many different types of compensation filters.
+As mentioned before, CIC filters are very efficient filters but they lack a flat frequency response with a sharp cutoff and we need an additional compensation filter appended after them to get a better response. The current implementation of the host interface does not implement such a filter yet but this is a possible and probably very useful improvement that could be made. A nice feature to have could be to make it modular such that it can accept many different types of compensation filters.
 
 ## Acknowledgments
 
