@@ -15,8 +15,9 @@ typedef struct pcm_t {
     size_t sample_rate;
     // The buffer accessed by the PRU, mapped by prussdrv, and its length
     volatile void * PRU_buffer;
-    size_t PRU_buffer_len;
-    // The ring buffer which the main place for storing data
+    // Length of the aforementioned buffer
+    unsigned int PRU_buffer_len;
+    // The ring buffer which is the main place for storing data
     ringbuffer_t * main_buffer;
     // Function pointer to an optional filter
     // TODO:

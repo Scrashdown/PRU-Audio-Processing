@@ -11,16 +11,8 @@
 #define SUB_BUF_NB 50
 
 typedef struct {
-    // Virtual address of the buffer the PRU writes to
-    volatile void * host_datain_buffer;
-    // Length of the aforementioned buffer
-    unsigned int host_datain_buffer_len;
-    // Buffer to which output the data
-    ringbuffer_t * ringbuf;
     // Pointer to the PCM signal itself
     pcm_t * pcm;
-    // TODO: function pointer to an optional filter
-
     // Flag to enable/disable recording
     int recording_flag;
     // Flag to request stopping of the thread
@@ -52,24 +44,24 @@ void *processing_routine(void * __args)
     while (1) {
         prussdrv_pru_wait_event(next_evt);
         if (next_evt == PRU_EVTOUT_0) {
-            printf("INT0\n");
             prussdrv_pru_clear_event(next_evt, PRU0_ARM_INTERRUPT);
             next_evt = PRU_EVTOUT_1;
-            new_data_start = args.host_datain_buffer;
+            new_data_start = args.pcm -> PRU_buffer;
         } else {
-            printf("INT1\n");
             prussdrv_pru_clear_event(next_evt, PRU1_ARM_INTERRUPT);
             next_evt = PRU_EVTOUT_0;
-            new_data_start = args.host_datain_buffer + args.host_datain_buffer_len / 2;
+            new_data_start = &(((uint8_t *) args.pcm -> PRU_buffer)[args.pcm -> PRU_buffer_len / 2]);
         }
 
         // Write the data to the ringbuffer, only if recording is enabled
         if (args.recording_flag) {
+            // Size of one 6-channel sample tuple, in bytes
             size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
-            size_t block_count = args.host_datain_buffer_len / block_size;
+            // Number of these blocks to retrieve, must correspond to half of the PRU buffer length
+            size_t block_count = (args.pcm -> PRU_buffer_len) / block_size / 2;
             pthread_mutex_lock(&ringbuf_mutex);
             // Write data to the ringbuffer
-            size_t written = ringbuf_push(args.ringbuf, (uint8_t *) new_data_start, block_size, block_count);
+            size_t written = ringbuf_push(args.pcm -> main_buffer, (uint8_t *) new_data_start, block_size, block_count);
             pthread_mutex_unlock(&ringbuf_mutex);
 
             if (written != block_count) {
@@ -114,15 +106,13 @@ pcm_t * pru_processing_init(void)
     }
 
     // Initialize memory mappings to get PRU buffer address and length
-    volatile void * host_datain_buffer;
-    unsigned int host_datain_buffer_len;
-    if (PRU_proc_init(&host_datain_buffer, &host_datain_buffer_len)) {
+    if (PRU_proc_init(&(pcm -> PRU_buffer), &(pcm -> PRU_buffer_len))) {
         free(pcm);
         return NULL;
     }
 
     // Initialize ringbuffer
-    ringbuffer_t * ringbuf = ringbuf_create(host_datain_buffer_len, SUB_BUF_NB);
+    ringbuffer_t * ringbuf = ringbuf_create(pcm -> PRU_buffer_len, SUB_BUF_NB);
     if (ringbuf == NULL) {
         free(pcm);
         return NULL;
@@ -135,25 +125,12 @@ pcm_t * pru_processing_init(void)
     //pcm -> sample_rate = sample_rate;
     pcm -> nchan = 6;
     pcm -> sample_rate = 64000;
-    pcm -> PRU_buffer = host_datain_buffer;
-    pcm -> PRU_buffer_len = host_datain_buffer_len;
     pcm -> main_buffer = ringbuf;
 
-    args.host_datain_buffer = host_datain_buffer;
-    args.host_datain_buffer_len = host_datain_buffer_len;
     args.pcm = pcm;
     args.recording_flag = 0; // Do not output to ringbuffer at first
-    args.ringbuf = ringbuf;
+    args.stop_thread_flag = 0;
 
-    // Initialize thread parameters
-    /*
-    if (pthread_attr_init(&PRU_thread_attr) || pthread_attr_setschedparam(&PRU_thread_attr, SCHED_RR)) {
-        fprintf(stderr, "Error! Could not create thread attribute.\n");
-        ringbuf_free(ringbuf);
-        free((void *) pcm);
-        return NULL;
-    }*/
-    
     // Start processing in a separate thread!
     if (pthread_create(&PRU_thread, &PRU_thread_attr, processing_routine, NULL)) {
         fprintf(stderr, "Error! Audio capture thread could not be created.\n");
@@ -188,7 +165,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 
     pthread_mutex_lock(&ringbuf_mutex);
     // Read data from the ringbuffer
-    size_t read = ringbuf_pop(args.ringbuf, raw_data, block_size, nsamples);
+    size_t read = ringbuf_pop(args.pcm -> main_buffer, raw_data, block_size, nsamples);
     pthread_mutex_unlock(&ringbuf_mutex);
 
     if (read != nsamples) {
