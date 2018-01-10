@@ -68,6 +68,7 @@ Where $B_{in}$ is the bit width of the filter's input (in our case 1 bit), M, N 
 First of all, make sure you have the required hardware: the BeagleBone Black, an SD card, and the Octopus Board. Flash the board with the latest "IoT" Debian image following these [instructions](https://beagleboard.org/getting-started).
 
 ![The BeagleBone Black, with an SD card](Pictures/BBB.jpg)
+
 ![The Octopus Board, although the program only supports 6 channels for now, it has 8 mics](Pictures/kurodako.jpg)
 
 #### Configure `uio_pruss` and free the GPIO pins for the PRU
@@ -359,7 +360,6 @@ typedef struct pcm_t {
  * 
  * @return pcm_t* A pointer to a new pcm object in case of success, NULL otherwise.
  */
-//pcm_t * pru_processing_init(size_t nchan, size_t sample_rate);
 pcm_t * pru_processing_init(void);
 
 /**
@@ -453,15 +453,15 @@ We have noticed that some occasional glitches appear in the signal.
 
 ![Glitches in the signal while recording for about 4m15s](Pictures/glitches_circled.png)
 
-### Challenges faced
+## Challenges faced
 
-#### Lack of documentation and the existence of 2, different drivers
+### Lack of documentation and the existence of 2, different drivers
 
 The biggest challenge faced in this project is probably the lack of clear and organized documentation about how to run code on the PRU from the Linux host, how to configure the operating system so that the BeagleBone's pins can be multiplexed to the PRU, how to choose which driver to use, and finally how to configure the BeagleBone for it to work. Most of the documentation and examples are scarce, sometimes outdated and scattered across multiple websites which forced us to do a lot of trial and errors on things such has how to enable drivers or the right interrupts between the host and the PRU.
 
 Apart from the fact that embedded systems is an inherently tough subject that is by far not as popular as more high level programming is (especially about the PRU, which seems to be a piece of hardware very few people use or know about), I think the scarcity of the documentation is probably the greatest factor that makes the learning curve for this project rather steep.
 
-#### Limited number of registers and tight timings
+### Limited number of registers and tight timings
 
 On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than 144 cycles. All except one the PRU's registers are used, and the majority of the banks' registers are used as well.
 
@@ -469,23 +469,23 @@ Another challenge was to design the program such that it would not rely on the h
 
 ![Spectrogram of a signal missing samples as a result of timing issues](Pictures/timing_bug.png)
 
-### Possible improvements and additional features
+## Possible improvements and additional features
 
-#### Use both PRUs
+### Use both PRUs
 
 Currently, we use only one PRU (PRU1) to handle the audio processing with the CIC filter. The design choice was made to make the implementation simpler. However, this also limited us to being only able to process 6 channels at a time instead of the initial goal of 8.
 
 It could for example be possible to implement a CIC on both PRUs which would allow us to handle more than 6 channels. Another idea would be to keep the CIC filter on one PRU, but move the compensation filter which is currently implemented on the host ARM CPU to the other PRU, offloading the ARM CPU even further and also reducing the latency.
 
-#### Tweak the parameters to get smaller bit width and possibly handle more channels
+### Tweak the parameters to get smaller bit width and possibly handle more channels
 
 The parameters we are currently using for the CIC filter (R = 16, N = 4, M = 1) give a decent frequency response (at least judging by our ear) but require 17 bits per stage of the filter. Tweaking the parameters to achieve 16 bits or less would allow fitting 2 channels in one register which would dramatically reduce the usage of memory resources, both on the PRU and on the host.
 
-#### Use of a lookup table
+### Use of a lookup table
 
 Since the PRUs each have some data memory available (8 kB each, with an additional shared 12 kB), it might be more time-efficient to implement the PDM to PCM conversion using a precomputed look-up table stored in memory instead of implementing a CIC filter.
 
-#### Better and more modular interface
+### Better and more modular interface
 
 For now the interface is very limited, and depending on how many channels the user chooses to read, the whole program can also be very wasteful on resources. This is because with the current implementation, the PRU always processes the 6 channels, and the host interface's backend always records all 6 channels, even if in the end the user requests fewer channels. In the event the user wants to read fewer channels, the interface's front-end will just drop the data from the channels the user does not want, before sending the data to the user.
 
@@ -495,7 +495,7 @@ As explained earlier, the current implementation of the interface uses a very si
 
 A workaround to this would be to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the `liblfds` library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer). The library can be checked here : [https://liblfds.org/](https://liblfds.org/).
 
-#### Introduce further filtering on the host side
+### Introduce further filtering on the host side
 
 As mentioned before, CIC filters are very efficient filters but they lack a flat frequency response with a sharp cutoff and we need an additional compensation filter appended after them to get a better response. The current implementation of the host interface does not implement such a filter yet but this is a possible and probably very useful improvement that could be made. A nice feature to have could be to make it modular such that it can accept many different types of compensation filters.
 
