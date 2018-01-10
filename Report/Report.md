@@ -350,8 +350,6 @@ typedef struct pcm_t {
     unsigned int PRU_buffer_len;
     // The ring buffer which is the main place for storing data
     ringbuffer_t * main_buffer;
-    // Function pointer to an optional filter
-    // TODO:
 } pcm_t;
 
 /**
@@ -440,6 +438,8 @@ It is worth noting that using one channel, the timing constraints are much less 
 ### 6-channels implementation
 
 At the time of writing this report, the 6-channels implementation appears to work. However, only the outputs of the first 3 channels have been tested, because we do not yet have the board with the 6 microphones wired as explained earlier, and the microphones we have all have the SELECT line soldered to VDD, so they can only be used to record data for the first 3 channels.
+
+**TODO:**
 
 ### C Host interface
 
