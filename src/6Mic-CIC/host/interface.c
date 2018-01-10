@@ -41,8 +41,8 @@ void *processing_routine(void * __args)
     volatile void * new_data_start;
     int overflow_flag;
 
-    const volatile void * buffer_beginning = args.pcm -> PRU_buffer;
-    const volatile void * buffer_middle = &(((uint8_t *) args.pcm -> PRU_buffer)[args.pcm -> PRU_buffer_len / 2]);
+    volatile void * buffer_beginning = args.pcm -> PRU_buffer;
+    volatile void * buffer_middle = &(((uint8_t *) args.pcm -> PRU_buffer)[args.pcm -> PRU_buffer_len / 2]);
 
     // Process indefinitely
     while (1) {
@@ -67,7 +67,7 @@ void *processing_routine(void * __args)
             const size_t block_count = (args.pcm -> PRU_buffer_len) / block_size / 2;
             pthread_mutex_lock(&ringbuf_mutex);
             // Write data to the ringbuffer
-            const size_t written = ringbuf_push(args.pcm -> main_buffer, (uint8_t *) new_data_start, block_size, block_count, &overflow_flag);
+            ringbuf_push(args.pcm -> main_buffer, (uint8_t *) new_data_start, block_size, block_count, &overflow_flag);
             pthread_mutex_unlock(&ringbuf_mutex);
 
             if (overflow_flag) {
@@ -90,7 +90,7 @@ void *processing_routine(void * __args)
 pcm_t * pru_processing_init(void)
 {
     // Allocate memory for the PCM
-    const pcm_t * pcm = calloc(1, sizeof(pcm_t));
+    pcm_t * pcm = calloc(1, sizeof(pcm_t));
     if (pcm == NULL) {
         fprintf(stderr, "Error! Memory for pcm could not be allocated.\n");
         return NULL;
@@ -103,7 +103,7 @@ pcm_t * pru_processing_init(void)
     }
 
     // Initialize ringbuffer
-    const ringbuffer_t * ringbuf = ringbuf_create(pcm -> PRU_buffer_len, SUB_BUF_NB);
+    ringbuffer_t * ringbuf = ringbuf_create(pcm -> PRU_buffer_len, SUB_BUF_NB);
     if (ringbuf == NULL) {
         free(pcm);
         return NULL;
@@ -148,7 +148,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     // Extract raw data to temporary buffer
     const size_t block_size = SAMPLE_SIZE_BYTES * (args.pcm -> nchan);
     // TODO: use stack or heap for this ?
-    const uint8_t * raw_data = calloc(nsamples, block_size);
+    uint8_t * raw_data = calloc(nsamples, block_size);
     if (raw_data == NULL) {
         fprintf(stderr, "Error! Could not allocate temporary buffer for raw data.\n");
         return 0;
@@ -164,7 +164,7 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
     }
 
     // Extract only the channels we are interested in, and apply some filter
-    const uint8_t * dst_bytes = (const uint8_t *) dst;
+    uint8_t * dst_bytes = (uint8_t *) dst;
     for (size_t s = 0; s < read; ++s) {
         // Only extract the first nchan channels
         memcpy(&dst_bytes[SAMPLE_SIZE_BYTES * nchan * s], &raw_data[block_size * s], SAMPLE_SIZE_BYTES * nchan);
