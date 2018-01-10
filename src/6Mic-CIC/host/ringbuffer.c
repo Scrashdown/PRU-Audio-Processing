@@ -96,11 +96,10 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
         memcpy(data, &(src -> data[src -> tail]), to_read);
     } else {
         // Need to copy the first half up to the end of the actual buffer in memory from head, then copy the rest from the beginning of the said buffer
-        const size_t first_half_len = src -> maxLength - src -> head;
+        const size_t first_half_len = src -> maxLength - src -> tail;
         memcpy(data, &(src -> data[src -> tail]), first_half_len);
         memcpy(&data[first_half_len], src -> data, to_read - first_half_len);
     }
-    
 
     // Adjust tail pointer
     src -> tail += to_read;
