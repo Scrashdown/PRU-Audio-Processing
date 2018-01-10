@@ -5,7 +5,7 @@
 
 #define OUTFILE "../output/interface.pcm"
 #define NSAMPLES 64000 * 1
-#define NCHANNELS 6
+#define NCHANNELS 3
 
 int main(void) {
     printf("\nStarting testing program!\n");
