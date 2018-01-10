@@ -442,7 +442,7 @@ An improvement could be to let the user choose how many channels he intends to u
 
 As explained earlier, the current implementation of the interface uses a very simple circular buffer we implemented ourselves, and concurrent accesses are managed using a mutex. This is probably a quite inefficient and unoptimized solution that could lead the interface back-end to miss the recovery of some of the samples from the PRU, if the `pcm_read` function is asked to retrieve a huge chunk of data.
 
-A workaround to this would probably to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the `liblfds` library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer). The library can be checked here : [https://liblfds.org/](https://liblfds.org/).
+A workaround to this would be to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the `liblfds` library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer). The library can be checked here : [https://liblfds.org/](https://liblfds.org/).
 
 #### Introduce further filtering on the host side
 
