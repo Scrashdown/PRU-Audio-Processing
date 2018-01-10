@@ -67,7 +67,8 @@ Where $B_{in}$ is the bit width of the filter's input (in our case 1 bit), M, N 
 
 First of all, make sure you have the required hardware: the BeagleBone Black, an SD card, and the Octopus Board. Flash the board with the latest "IoT" Debian image following these [instructions](https://beagleboard.org/getting-started).
 
-**TODO: include image of the hardware, of possible**
+![The BeagleBone Black, with an SD card](Pictures/BBB.jpg)
+![The Octopus Board, although the program only supports 6 channels for now, it has 8 mics](Pictures/kurodako.jpg)
 
 #### Configure `uio_pruss` and free the GPIO pins for the PRU
 
