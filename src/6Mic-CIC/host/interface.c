@@ -186,6 +186,12 @@ size_t pcm_buffer_length(void)
 }
 
 
+size_t pcm_buffer_maxlength(void)
+{
+    return args.pcm -> main_buffer -> maxLength;
+}
+
+
 // Enable writing the PRU samples to the ringbuffer
 void enable_recording(void)
 {

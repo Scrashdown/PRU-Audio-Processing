@@ -58,6 +58,14 @@ size_t pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan);
 size_t pcm_buffer_length(void);
 
 /**
+ * @brief Get the max length of the circular buffer holding the recorded samples.
+ * 
+ * @param void 
+ * @return size_t The max length of the buffer.
+ */
+size_t pcm_buffer_maxlength(void);
+
+/**
  * @brief Enable recording of the audio to the ringbuffer.
  * 
  * Once this function is called, the interface will start copying
