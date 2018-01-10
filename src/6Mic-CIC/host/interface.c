@@ -14,9 +14,9 @@ typedef struct {
     // Pointer to the PCM signal itself
     pcm_t * pcm;
     // Flag to enable/disable recording
-    int recording_flag;
+    volatile int recording_flag;
     // Flag to request stopping of the thread
-    int stop_thread_flag;
+    volatile int stop_thread_flag;
 } processing_routine_args_t;
 
 
