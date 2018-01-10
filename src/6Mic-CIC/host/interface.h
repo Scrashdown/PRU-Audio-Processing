@@ -47,7 +47,23 @@ void pru_processing_close(pcm_t * pcm);
  * @param nchan The number of channels to read.
  * @return int The number of samples effectively written.
  */
-int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan);
+size_t pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan);
+
+/**
+ * @brief Get the current length of the circular buffer holding the recorded samples.
+ * 
+ * @param void 
+ * @return size_t The length of the buffer.
+ */
+size_t pcm_buffer_length(void);
+
+/**
+ * @brief Get the max length of the circular buffer holding the recorded samples.
+ * 
+ * @param void 
+ * @return size_t The max length of the buffer.
+ */
+size_t pcm_buffer_maxlength(void);
 
 /**
  * @brief Enable recording of the audio to the ringbuffer.

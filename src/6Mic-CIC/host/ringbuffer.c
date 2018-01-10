@@ -19,7 +19,7 @@ ringbuffer_t * ringbuf_create(size_t blocksize, size_t nelem)
     }
 
     // Then allocate memory for the data buffer of the ring buffer
-    const uint8_t * data = calloc(nelem, blocksize);
+    uint8_t * data = calloc(nelem, blocksize);
     if (data == NULL) {
         fprintf(stderr, "Error! Could not allocate memory for ringbuffer's data buffer.\n");
         free(ringbuf);
@@ -50,8 +50,6 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
     } else {
         free_bytes = (dst -> tail) - (dst -> head);
     }
-    // If the implementation is correct, this assertion should never fail.
-    assert(free_bytes % block_count == 0);
 
     const size_t to_write = block_size * block_count;
     // Check if an overflow will occur or not.
@@ -88,8 +86,6 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
     } else {
         available_bytes = (src -> maxLength) - (src -> tail) + (src -> head);
     }
-    // If the implementation is correct, this assertion should never fail.
-    assert(available_bytes % block_count == 0);
 
     // Read only the maximum amount of data possible without underflow.
     const size_t to_read = (block_size * block_count) > available_bytes ? available_bytes : (block_size * block_count);
@@ -100,11 +96,10 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
         memcpy(data, &(src -> data[src -> tail]), to_read);
     } else {
         // Need to copy the first half up to the end of the actual buffer in memory from head, then copy the rest from the beginning of the said buffer
-        const size_t first_half_len = src -> maxLength - src -> head;
+        const size_t first_half_len = src -> maxLength - src -> tail;
         memcpy(data, &(src -> data[src -> tail]), first_half_len);
         memcpy(&data[first_half_len], src -> data, to_read - first_half_len);
     }
-    
 
     // Adjust tail pointer
     src -> tail += to_read;

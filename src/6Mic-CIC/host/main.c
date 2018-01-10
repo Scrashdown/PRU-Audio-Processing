@@ -4,8 +4,8 @@
 #include "interface.h"
 
 #define OUTFILE "../output/interface.pcm"
-#define NSAMPLES 64000 * 4
-#define NCHANNELS 6
+#define NSAMPLES 64000 * 1
+#define NCHANNELS 3
 
 int main(void) {
     printf("\nStarting testing program!\n");
@@ -32,20 +32,18 @@ int main(void) {
         return 1;
     }
 
-    struct timespec delay = { 4, 0 };
-    printf("Length of the ringbuffer before recording: %zu (maxLength = %zu)\n", ringbuf_len(pcm -> main_buffer), pcm -> main_buffer -> maxLength);
+    struct timespec delay = { 0, 250000000 };  // Wait 250 ms
+    const size_t limit = 1000;
     enable_recording();
         nanosleep(&delay, NULL);
+        for (size_t i = 0; i < limit; ++i) {
+            nanosleep(&delay, NULL);
+            size_t read = pcm_read(pcm, tmp_buffer, 16500, NCHANNELS);
+            fwrite(tmp_buffer, NCHANNELS * SAMPLE_SIZE_BYTES, read, outfile);
+            printf("Buffer size : %zu, max = %zu\n", pcm_buffer_length(), pcm_buffer_maxlength());
+            printf("Read : %zu/%zu\n", i, limit);
+        }
     disable_recording();
-    fflush(stdout);
-    nanosleep(&delay, NULL);
-    printf("Length of the ringbuffer after recording: %zu (maxLength = %zu)\n", ringbuf_len(pcm -> main_buffer), pcm -> main_buffer -> maxLength);
-
-    int read = pcm_read(pcm, tmp_buffer, NSAMPLES, NCHANNELS);
-    pru_processing_close(pcm);
-
-    printf("Outputting the results to the pcm file...\n");
-    fwrite(tmp_buffer, NCHANNELS * SAMPLE_SIZE_BYTES, read, outfile);
 
     printf("Closing PRU processing...\n");
     fclose(outfile);
