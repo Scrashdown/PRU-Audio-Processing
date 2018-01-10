@@ -8,6 +8,8 @@ The audio processing code currently handles the 6 microphones at a fixed output 
 
 Running the core audio processing code on the PRU instead of the main ARM CPU allows for lower latency due to the PRU's predictable timing and it not being subject to OS scheduling like a typical Linux process running on the ARM CPU would be. Offloading the ARM CPU from such an intensive task also prevents our library from having a significant impact on the global performance of the host when it is used.
 
+The code and documentation can be found here : [https://github.com/Scrashdown/PRU-Audio-Processing](https://github.com/Scrashdown/PRU-Audio-Processing).
+
 ## PRU / PRUSS
 
 The PRUSS is a module of the ARM CPU used on the BeagleBone Black. It stands for PRU SubSystem, where PRU stands for Programmable Real-time Unit. The PRUSS contains 2 PRUs which are essentially very small and simple 32-bit microprocessors running at 200 MHz and using a custom instruction set. Each PRU has a constant 200 MHz clock rate, 8 kB of instruction memory, 8 kB of data memory, along with 12 kB of data memory shared between the 2 PRUs. They can be programmed either in assembly using the `pasm` assembler or in C using the `clpru` and `lnkpru` tools.
@@ -378,9 +380,11 @@ When the `pru_processing_init()` function of the API is called, it loads and sta
 
 This thread essentially waits alternatively for each interruption and then copies the corresponding buffer half to the circular buffer. Waiting for each interrupt alternatively makes sure the host cannot get desynchronized and start writing the buffer halves that are being overwritten by the PRU. However, this mechanism cannot detect whether a buffer half has been skipped. This can happen if the host is too busy with other programs which can make it miss an interrupt by the PRU. Furthermore, if an interrupt is missed, the next one will be skipped as well, since we wait for them alternatively. Therefore if an interrupt is missed, 2 buffer halves will actually be missed. We chose to use this mechanism because of its simplicity, and because it did not require the PRU to count the buffer halves it filled and output the number to the host regularly. This would however be a better solution.
 
-The circular buffer is similar to a queue but with a fixed length. Its API provides functions for pushing and popping data from it. In the case of an overflow, the push function will only throw a warning and overwrite the oldest data in the buffer.
+The circular buffer is similar to a queue but with a fixed length. Its API provides functions for pushing and popping data from it. In the case of an overflow, the push function will only trigger a warning and overwrite the oldest data in the buffer.
 
 The `pcm_read` function provided by the API pops the number of samples required by the user from the circular buffer, then extracts only the number of channels the user asks for, and finally outputs this data to the user provided buffer.
+
+It is important to note that there will be concurrent accesses to the circular buffer : data pushed by the recording thread, and data popped by the user thread calling the `pcm_read` function. Our implementation handles this by making accesses mutually exclusive by using a mutex declared in the `interface.c` file. This is a simple but far from ideal solution. For example, if a call to `pcm_read` pops a large chunk of data from the circular buffer, this may block the recording for a long enough time that it will miss the next interrupt, and therefore a large chunk of samples.
 
 ## Results
 
@@ -392,7 +396,7 @@ It is worth noting that using one channel, the timing constraints are much less 
 
 ### 6-channels implementation
 
-**TODO:**
+At the time of writing this report, the 6-channels implementation appears to work. However, only the outputs of the first 3 channels have been tested, because we do not yet have the board with the 6 microphones wired as explained earlier, and the microphones we have all have the SELECT line soldered to VDD, so they can only be used to record data for the first 3 channels.
 
 ### C Host interface
 
@@ -435,6 +439,10 @@ Since the PRUs each have some data memory available (8 kB each, with an addition
 For now the interface is very limited, and depending on how many channels the user chooses to read, the whole program can also be very wasteful on resources. This is because with the current implementation, the PRU always processes the 6 channels, and the host interface's backend always records all 6 channels, even if in the end the user requests fewer channels. In the event the user wants to read fewer channels, the interface's front-end will just drop the data from the channels the user does not want, before sending the data to the user.
 
 An improvement could be to let the user choose how many channels he intends to use at most, and then only handle this number of channels instead of the maximum possible. However, making the CIC filter's code modular might not be a feasible task given the high performance requirements, at least with the current model of our implementation. A workaround would be to write several programs, possibly one for each number of channels.
+
+As explained earlier, the current implementation of the interface uses a very simple circular buffer we implemented ourselves, and concurrent accesses are managed using a mutex. This is probably a quite inefficient and unoptimized solution that could lead the interface back-end to miss the recovery of some of the samples from the PRU, if the `pcm_read` function is asked to retrieve a huge chunk of data.
+
+A workaround to this would probably to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the `liblfds` library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer). The library can be checked here : [https://liblfds.org/](https://liblfds.org/).
 
 #### Introduce further filtering on the host side
 
