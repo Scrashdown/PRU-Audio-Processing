@@ -131,7 +131,7 @@ If everything went well, the `prussdrv` library and the `pasm` assembler should 
 
 #### Plug the Octopus board and write some code!
 
-The code for the CIC filter and the interface can be found in `src/6Mic-CIC/`. To write and run some code like the one below, write it to a file called `main.c` in `host/`, then run `sh deploy.sh && ./gen/main`.
+The code for the CIC filter and the interface can be found in `src/6Mic-CIC/`. To write and run some code like the one below, write it to a file called `main.c` in `host/`, then run `sh deploy.sh`, `cd gen/` and `./main`.
 
 ```C
 /* Example code for using the library. */
@@ -235,11 +235,12 @@ Since we are using the Octopus board, we have to read data at every edge of the 
 In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
 
 ![Timing diagram of the processing times with mic multiplexing](Pictures/PRU_timing_diagram_mic_multiplexing.png)
+
 ![Timing diagram of the processing times without mic multiplexing](Pictures/PRU_timing_diagram_no_mic_multiplexing.png)
 
 As mentioned above, multiplexing 2 microphones on 1 input pin reduces the available processing time, as can be seen on the diagrams above.
 
-![](Pictures/PRU_buffer.png)
+![Illustration of the interleaved samples in the buffer, and interruptions](Pictures/PRU_buffer.png)
 
 Reading the microphones' data is achieved by reading bits of the R31 register, which is connected to the PRU's input pins, to which the microphones' DATA lines are connected. Since we connected the microphones' clock to one of the input pins of the PRU as well, reading its state is done the same way. In order to know when to read the data, the PRU polls the CLK signal until it detects an edge. It then waits for 25 cycles (`t_dv`) and finally reads the data and stores it in a register.
 
@@ -353,7 +354,8 @@ typedef struct pcm_t {
 } pcm_t;
 
 /**
- * @brief Initialize PRU processing. Must be called before any other function of this file.
+ * @brief Initialize PRU processing. 
+ *        Must be called before any other function of this file.
  * 
  * @return pcm_t* A pointer to a new pcm object in case of success, NULL otherwise.
  */
@@ -368,7 +370,8 @@ pcm_t * pru_processing_init(void);
 void pru_processing_close(pcm_t * pcm);
 
 /**
- * @brief Read a given number of blocks of given size and output them to the user provided buffer.
+ * @brief Read a given number of blocks of given size 
+ *        and output them to the user provided buffer.
  * 
  * @param src The source pcm from which to read.
  * @param dst The buffer to which we want to write data.
@@ -398,9 +401,9 @@ size_t pcm_buffer_maxlength(void);
  * @brief Enable recording of the audio to the ringbuffer.
  * 
  * Once this function is called, the interface will start copying
- * from the buffer the PRU writes to, to the main ringbuffer of the interface. In order to avoid
- * a ringbuffer overflow, the user must therefore start reading using pcm_read quickly after this
- * function had been called.
+ * from the buffer the PRU writes to, to the main ringbuffer of the interface. 
+ * In order to avoid a ringbuffer overflow, the user must therefore start 
+ * reading using pcm_read quickly after this function had been called.
  * 
  */
 void enable_recording(void);
@@ -408,8 +411,9 @@ void enable_recording(void);
 /**
  * @brief Disable recording of the audio to the ringbuffer.
  * 
- * Once this function is called, the interface will stop copying data to the main ringbuffer.
- * This means only the samples remaining in the ringbuffer after this function was called can be read.
+ * Once this function is called, the interface will stop copying data 
+ * to the main ringbuffer. This means only the samples remaining in 
+ * the ringbuffer after this function was called can be read.
  * 
  */
 void disable_recording(void);
