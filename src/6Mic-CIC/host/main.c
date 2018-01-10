@@ -33,12 +33,15 @@ int main(void) {
     }
 
     struct timespec delay = { 0, 250000000 };  // Wait 250 ms
+    const size_t limit = 1000;
     enable_recording();
         nanosleep(&delay, NULL);
-        for (size_t i = 0; i < 100; ++i) {
+        for (size_t i = 0; i < limit; ++i) {
             nanosleep(&delay, NULL);
             size_t read = pcm_read(pcm, tmp_buffer, 16500, NCHANNELS);
             fwrite(tmp_buffer, NCHANNELS * SAMPLE_SIZE_BYTES, read, outfile);
+            printf("Buffer size : %zu, max = %zu\n", pcm_buffer_length(), pcm_buffer_maxlength());
+            printf("Read : %zu/%zu\n", i, limit);
         }
     disable_recording();
 
