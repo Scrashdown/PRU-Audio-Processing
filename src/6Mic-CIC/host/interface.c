@@ -137,7 +137,7 @@ pcm_t * pru_processing_init(void)
 }
 
 
-int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
+size_t pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 {
     // First check that the number of channels selected is valid
     if (nchan > src -> nchan) {
@@ -174,6 +174,15 @@ int pcm_read(pcm_t * src, void * dst, size_t nsamples, size_t nchan)
 
     free(raw_data);
     return read;
+}
+
+
+size_t pcm_buffer_length(void)
+{
+    pthread_mutex_lock(&ringbuf_mutex);
+    size_t length = ringbuf_len(args.pcm -> main_buffer);
+    pthread_mutex_unlock(&ringbuf_mutex);
+    return length;
 }
 
 
