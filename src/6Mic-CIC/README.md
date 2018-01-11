@@ -1,8 +1,10 @@
-# 6 Microphones on PRU1
+# 6 Microphones on PRU1 with a C interface
 
 6 microphones with 6 channels output. Each microphone has his own separate CIC filter. The microphones are connected on 3 separate datalines.
 
 2 microphones are multiplexed on each data line using their SELECT line and an appropriate resistor. This means that one of the mics will output its data on the rising edge of the mic CLK, while the other one will output its data on the falling edge.
+
+A very simple C interface is also provided and is described in the main README.md file.
 
 ## Pins setup
 

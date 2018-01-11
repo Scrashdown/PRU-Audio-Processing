@@ -449,7 +449,7 @@ At the time of writing this report, the 6-channels implementation appears to wor
 
 The interface has been tested recording samples for up to 5 minutes and appears to work.
 
-We have noticed that some occasional glitches appear in the signal.
+We have noticed however that some occasional glitches appear in the signal.
 
 ![Glitches in the signal while recording for about 4m15s](Pictures/glitches_circled.png)
 
