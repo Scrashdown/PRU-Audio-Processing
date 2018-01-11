@@ -14,7 +14,7 @@ The code and documentation can be found here : [https://github.com/Scrashdown/PR
 
 The PRUSS is a module of the ARM CPU used on the BeagleBone Black. It stands for PRU SubSystem, where PRU stands for Programmable Real-time Unit. The PRUSS contains 2 PRUs which are essentially very small and simple 32-bit microprocessors running at 200 MHz and using a custom instruction set. Each PRU has a constant 200 MHz clock rate, 8 kB of instruction memory, 8 kB of data memory, along with 12 kB of data memory shared between the 2 PRUs. They can be programmed either in assembly using the `pasm` assembler or in C using the `clpru` and `lnkpru` tools.
 
-Each PRU has 32, 32-bit registers, where R30 is used for interacting with the PRU's output pins and R31 is used for reading inputs from these pins and triggering interrupts by writing to it. Both PRUs also share 3 registers banks, also called scratchpads, which are banks containing 30 additional registers. Registers can be transferred in and out between these banks and each PRU in one cycle by using specialized assembly instructions. Furthermore, one PRU can also access the register of the other PRU.
+Each PRU has 32, 32-bit registers, where R30 is used for interacting with the PRU's output pins and R31 is used for reading inputs from these pins and triggering interrupts by writing to it. Both PRUs also share 3 registers banks, also called scratchpads, which are banks containing 30 additional registers. Registers can be transferred in and out between these banks and each PRU in one cycle by using specialized assembly instructions (`XIN` / `XOUT` / `XCHG`, commonly called `XFR` instructions in the PRU Reference Manual). Furthermore, one PRU can also access the registers of the other PRU using the same assembly instructions.
 
 The PRUs are designed to be as time-deterministic as possible. That is, pretty much all instructions will execute in a constant number of cycles (usually 1, therefore in 5 ns at the 200 MHz clock rate) except for the memory instructions which may vary in execution time.
 
@@ -441,11 +441,13 @@ It is worth noting that using one channel, the timing constraints are much less 
 
 ### 6-channels implementation with C Host interface
 
-At the time of writing this report, the 6-channels implementation partially works. Channels 1-3 give results that sound right, the same as the 1-channel implementation, which is expected. However, channels 4-6 only output zeros.
+At the time of writing this report, the 6-channels implementation works.
 
 The C interface has been tested recording samples for up to 5 minutes and appears to work.
 
 We have noticed that some occasional glitches appeared in the signal while using a microphone connected using a breadboard and soldered by hand. However, these glitches seem to have disappeared when we started using the Octopus Board.
+
+More rigorous testing needs to be done to make sure the PRU processing code and the interface work as intended.
 
 ![Glitches in the signal while recording for about 4m15s](Pictures/glitches_circled.png)
 
@@ -460,6 +462,8 @@ Apart from the fact that embedded systems is an inherently tough subject that is
 ### Limited number of registers and tight timings
 
 On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than 144 cycles. All except one the PRU's registers are used, and the majority of the banks' registers are used as well.
+
+This 'shortage' of registers on the PRU forced us to write each set of 6 samples in 2 steps of 3 registers and was the source of a bug : the byte offset counter used by the PRU to keep track of where it is writing in the host buffer was updated incorrectly. We incremented it by 6 * 4 bytes once instead of incrementing it by 3 * 4 bytes twice, which discarded the first 3 channels by overwriting them with the last 3 ones.
 
 Another challenge was to design the program such that it would not rely on the host too much because of its unpredictable timings and busy nature. Below is an example of a bug that happened when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) timing diagram.
 
