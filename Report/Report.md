@@ -14,7 +14,7 @@ The code and documentation can be found here : [https://github.com/Scrashdown/PR
 
 The PRUSS is a module of the ARM CPU used on the BeagleBone Black. It stands for PRU SubSystem, where PRU stands for Programmable Real-time Unit. The PRUSS contains 2 PRUs which are essentially very small and simple 32-bit microprocessors running at 200 MHz and using a custom instruction set. Each PRU has a constant 200 MHz clock rate, 8 kB of instruction memory, 8 kB of data memory, along with 12 kB of data memory shared between the 2 PRUs. They can be programmed either in assembly using the `pasm` assembler or in C using the `clpru` and `lnkpru` tools.
 
-Each PRU has 32, 32-bit registers, where R30 is used for interacting with the PRU's output pins and R31 is used for reading inputs from these pins and triggering interrupts by writing to it. Both PRUs also share 3 registers banks, also called scratchpads, which are banks containing 30 additional registers. Registers can be transferred in and out between these banks and each PRU in one cycle by using specialized assembly instructions. Furthermore, one PRU can also access the register of the other PRU.
+Each PRU has 32, 32-bit registers, where R30 is used for interacting with the PRU's output pins and R31 is used for reading inputs from these pins and triggering interrupts by writing to it. Both PRUs also share 3 registers banks, also called scratchpads, which are banks containing 30 additional registers. Registers can be transferred in and out between these banks and each PRU in one cycle by using specialized assembly instructions (`XIN` / `XOUT` / `XCHG`, commonly called `XFR` instructions in the PRU Reference Manual). Furthermore, one PRU can also access the registers of the other PRU using the same assembly instructions.
 
 The PRUs are designed to be as time-deterministic as possible. That is, pretty much all instructions will execute in a constant number of cycles (usually 1, therefore in 5 ns at the 200 MHz clock rate) except for the memory instructions which may vary in execution time.
 
@@ -70,6 +70,8 @@ First of all, make sure you have the required hardware: the BeagleBone Black, an
 ![The BeagleBone Black, with an SD card](Pictures/BBB.jpg)
 
 ![The Octopus Board, although the program only supports 6 channels for now, it has 8 mics](Pictures/kurodako.jpg)
+
+![The BBB with the Octopus Board, ready to be used!](Pictures/BBBkurodako.jpg)
 
 #### Configure `uio_pruss` and free the GPIO pins for the PRU
 
@@ -298,7 +300,7 @@ An important thing to note is that the PRU is supposed to support the XCHG instr
 
 With the current parameters, storing all data on the PRU leaves one free register : r29. Registers r1-r22 are used for channel private data and are the ones exchanged with the scratchpads.
 
-We also want to figure out the data rate of the fiter's output. To do this, using the formula desribed earlier, we first compute the output bit width `B_out`. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers are 32 bits wide and it is more convenient to write the data in 32 bits chunks. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
+We also want to figure out the data rate of the filter's output. To do this, using the formula desribed earlier, we first compute the output bit width `B_out`. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers are 32 bits wide and it is more convenient to write the data in 32 bits chunks. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
 
 	D_out = B_out * f_s / R
 
@@ -439,17 +441,15 @@ The single channel implementation works and shows that it is possible to impleme
 
 It is worth noting that using one channel, the timing constraints are much less tight since there is much less processing to be done. This leaves more freedom in choosing the parameters. For example, higher input sample rates (compared to the 6-channel 1.028 MHz) are achievable.
 
-### 6-channels implementation
+### 6-channels implementation with C Host interface
 
-At the time of writing this report, the 6-channels implementation appears to work. However, only the outputs of the first 3 channels have been tested, because we do not yet have the board with the 6 microphones wired as explained earlier, and the microphones we have all have the SELECT line soldered to VDD, so they can only be used to record data for the first 3 channels.
+At the time of writing this report, the 6-channels implementation works.
 
-**TODO:**
+The C interface has been tested recording samples for up to 5 minutes and appears to work.
 
-### C Host interface
+We have noticed that some occasional glitches appeared in the signal while using a microphone connected using a breadboard and soldered by hand. However, these glitches seem to have disappeared when we started using the Octopus Board.
 
-The interface has been tested recording samples for up to 5 minutes and appears to work.
-
-We have noticed however that some occasional glitches appear in the signal.
+More rigorous testing needs to be done to make sure the PRU processing code and the interface work as intended.
 
 ![Glitches in the signal while recording for about 4m15s](Pictures/glitches_circled.png)
 
@@ -464,6 +464,8 @@ Apart from the fact that embedded systems is an inherently tough subject that is
 ### Limited number of registers and tight timings
 
 On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than 144 cycles. All except one the PRU's registers are used, and the majority of the banks' registers are used as well.
+
+This 'shortage' of registers on the PRU forced us to write each set of 6 samples in 2 steps of 3 registers and was the source of a bug : the byte offset counter used by the PRU to keep track of where it is writing in the host buffer was updated incorrectly. We incremented it by 6 * 4 bytes once instead of incrementing it by 3 * 4 bytes twice, which discarded the first 3 channels by overwriting them with the last 3 ones.
 
 Another challenge was to design the program such that it would not rely on the host too much because of its unpredictable timings and busy nature. Below is an example of a bug that happened when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) timing diagram.
 
@@ -494,6 +496,8 @@ An improvement could be to let the user choose how many channels he intends to u
 As explained earlier, the current implementation of the interface uses a very simple circular buffer we implemented ourselves, and concurrent accesses are managed using a mutex. This is probably a quite inefficient and unoptimized solution that could lead the interface back-end to miss the recovery of some of the samples from the PRU, if the `pcm_read` function is asked to retrieve a huge chunk of data.
 
 A workaround to this would be to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the `liblfds` library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer). The library can be checked here : [https://liblfds.org/](https://liblfds.org/).
+
+Another idea would be to adapt the interface so that it could directly create a WAV file, and not a raw PCM file.
 
 ### Introduce further filtering on the host side
 
