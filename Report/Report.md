@@ -300,7 +300,7 @@ An important thing to note is that the PRU is supposed to support the XCHG instr
 
 With the current parameters, storing all data on the PRU leaves one free register : r29. Registers r1-r22 are used for channel private data and are the ones exchanged with the scratchpads.
 
-We also want to figure out the data rate of the fiter's output. To do this, using the formula desribed earlier, we first compute the output bit width `B_out`. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers are 32 bits wide and it is more convenient to write the data in 32 bits chunks. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
+We also want to figure out the data rate of the filter's output. To do this, using the formula desribed earlier, we first compute the output bit width `B_out`. In our case, `B_in = 1`, so `B_out = 17`. However, the PRU's registers are 32 bits wide and it is more convenient to write the data in 32 bits chunks. Therefore, our 'effective' output bit width, `B_out'` is 32. Since we know the output sample rate is `f_s / R`, it is now straightforward to compute the output data rate :
 
 	D_out = B_out * f_s / R
 
