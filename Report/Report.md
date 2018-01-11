@@ -439,17 +439,13 @@ The single channel implementation works and shows that it is possible to impleme
 
 It is worth noting that using one channel, the timing constraints are much less tight since there is much less processing to be done. This leaves more freedom in choosing the parameters. For example, higher input sample rates (compared to the 6-channel 1.028 MHz) are achievable.
 
-### 6-channels implementation
+### 6-channels implementation with C Host interface
 
-At the time of writing this report, the 6-channels implementation appears to work. However, only the outputs of the first 3 channels have been tested, because we do not yet have the board with the 6 microphones wired as explained earlier, and the microphones we have all have the SELECT line soldered to VDD, so they can only be used to record data for the first 3 channels.
+At the time of writing this report, the 6-channels implementation partially works. Channels 1-3 give results that sound right, the same as the 1-channel implementation, which is expected. However, channels 4-6 only output zeros.
 
-**TODO:**
+The C interface has been tested recording samples for up to 5 minutes and appears to work.
 
-### C Host interface
-
-The interface has been tested recording samples for up to 5 minutes and appears to work.
-
-We have noticed however that some occasional glitches appear in the signal.
+We have noticed that some occasional glitches appeared in the signal while using a microphone connected using a breadboard and soldered by hand. However, these glitches seem to have disappeared when we started using the Octopus Board.
 
 ![Glitches in the signal while recording for about 4m15s](Pictures/glitches_circled.png)
 
