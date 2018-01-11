@@ -175,6 +175,8 @@
 
         // Store output for 3 channels in memory
         SBBO    OUTPUT1, HOST_MEM, BYTE_COUNTER, 4 * 3  // 3 + 2 = 5 cycles ??
+        // Increment the written bytes counter by 3 after writing 3 results
+        ADD     BYTE_COUNTER, BYTE_COUNTER, 3 * 4
 .endm
 
 
@@ -270,7 +272,7 @@ chan45:
 
 chan6:
     // Store channels 4 and 5 registers to 2nd half of BANK1 and 1st half of BANK2
-    // Store PRU's R12-R22 to BANK2's R1-R22
+    // Store PRU's R12-R22 to BANK2's R1-R11
     XOUT    BANK2, r12, 4 * 11
     // Store PRU's R1-R11 to BANK1's R12-R22
     LDI     XFR_OFFSET, 11
@@ -285,8 +287,6 @@ chan6:
 
     // If we reach this point, it means we reached R, so reset the counter
     LDI     SAMPLE_COUNTER, 0
-    // Increment the written bytes counter since all write operations are done now
-    ADD     BYTE_COUNTER, BYTE_COUNTER, 6 * 4
 
     QBNE    check_half, BYTE_COUNTER, HOST_MEM_SIZE
     // We filled the whole buffer, interrupt the host
