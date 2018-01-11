@@ -1,9 +1,16 @@
 am335x_pru_package/
 Captures/
 .vscode/
+*DS_Store
 
 */gen/
 src/*/output/*
 *.bin
 loader
 main
+
+*Report.aux
+*Report.log
+*Report.synctex.gz
+*Report.toc
+*Report.out
