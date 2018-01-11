@@ -5,9 +5,6 @@
 #include "interface.h"
 #include "loader.h"
 
-#define MIN_NCHAN 1
-#define MAX_NCHAN 6
-
 #define SUB_BUF_NB 50
 
 typedef struct {
