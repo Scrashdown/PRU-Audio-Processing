@@ -6,8 +6,8 @@
  * 
  * Current timings:
  * 
- * Rising edge data : 56 cycles
- * Falling edge data : 65 cycles
+ * Rising edge data : 57 cycles (max = 72 at f_s = 1.028 MHz)
+ * Falling edge data : 63 cycles (max = 72 at f_s = 1.028 MHz)
  * 
  * 
  * 
@@ -54,7 +54,7 @@
 #define OUTPUT2 r24
 #define OUTPUT3 r25
 
-// Persistent registers
+// # Persistent registers
 #define IN_PINS r31
 #define BYTE_COUNTER r28
 #define SAMPLE_COUNTER r0.b1
@@ -62,35 +62,39 @@
 #define HOST_MEM_SIZE r26
 #define XFR_OFFSET r0.b0
 
-// Temporary "registers"
+// # Temporary "registers"
 #define DELAY_COUNTER r0.w2
 #define TMP r0.w2
 
-// Input pins offsets
+// ## Input pins offsets
 #define CLK_OFFSET 11
 #define DAT_OFFSET1 10
 #define DAT_OFFSET2 8
 #define DAT_OFFSET3 9
 
-// Decimation rate
+// ## Decimation rate
 #define R 16
 
-// Scratchpad register banks numbers
+// ## Scratchpad register banks numbers
 #define BANK0 10
 #define BANK1 11
 #define BANK2 12
 #define PRU0_REGS 14
 
-// Defined in the PRU ref. guide
+// ## Defined in the PRU ref. guide
 #define LOCAL_MEM_ADDR 0x0
 #define PRU1_ARM_INTERRUPT 20
 
-// DEBUG (assumes P8.45)
+// ## DEBUG (assumes LED or oscilloscope connected to P8.45)
 #define SET_LED SET r30, r30, 0
 #define CLR_LED CLR r30, r30, 0
 #define TOGGLE_LED XOR r30, r30, 1
 
 
+/**
+ * @brief Wait for the given number of cycles.
+ * 
+ */
 .macro delay_cycles
 .mparam cycles
     LDI     DELAY_COUNTER, (cycles - 1) / 2
@@ -100,9 +104,15 @@
 .endm
 
 
-.macro int_comb_chan12  // 29 cycles
+/**
+ * @brief Process data from input pins DATA1 and DATA2. On rising edge, these correspond
+ *        to channels 1 and 2, on falling edge, these correspond to channels 4 and 5.
+ *        If the oversampling rate is not reached, will jump to jmp_addr.
+ * 
+ */
+.macro int_comb_chan12  // <= 29 cycles
 .mparam jmp_addr
-    // Retrieve data for the 2 first channels and do the integrator stages
+        // Retrieve data for the 2 first channels and iterate the integrator stages
         LSR     TMP, IN_PINS, DAT_OFFSET1
         AND     TMP, TMP, 1
         ADD     INT0_CHAN1, INT0_CHAN1, TMP
@@ -120,9 +130,10 @@
         ADD     INT3_CHAN1, INT3_CHAN1, INT2_CHAN1
         ADD     INT3_CHAN2, INT3_CHAN2, INT2_CHAN2
 
-        // Work on channel 3
+        // Jump to start working on the 3rd input pin data.
         QBNE    jmp_addr, SAMPLE_COUNTER, R
 
+        // Comb stages
         SUB     COMB0_CHAN1, INT3_CHAN1, LAST_INT_CHAN1
         SUB     COMB0_CHAN2, INT3_CHAN2, LAST_INT_CHAN2
 
@@ -147,9 +158,14 @@
 .endm
 
 
-.macro int_comb_chan3  // 15 + t(SBBO) stages, 20 cycles ??
+/**
+ * @brief Process data from input pin DATA3. On rising edge, this is channel 3,
+ *        on falling edge, channel 6. If the oversampling rate is not reached, will jump to jmp_addr.
+ * 
+ */
+.macro int_comb_chan3  // <= 15 + t(SBBO) + 1 stages, 21 cycles ??
 .mparam jmp_addr
-    // Retrieve data for channel 3
+        // Retrieve data for channel 3 and iterate the integrator stages.
         LSR     TMP, IN_PINS, DAT_OFFSET3
         AND     TMP, TMP, 1
         ADD     INT0_CHAN1, INT0_CHAN1, TMP
@@ -161,6 +177,7 @@
         // Work on the 3 other channels
         QBNE    jmp_addr, SAMPLE_COUNTER, R
 
+        // Comb stages
         SUB     COMB0_CHAN1, INT3_CHAN1, LAST_INT_CHAN1
         SUB     COMB1_CHAN1, COMB0_CHAN1, LAST_COMB0_CHAN1
         SUB     COMB2_CHAN1, COMB1_CHAN1, LAST_COMB1_CHAN1
@@ -175,7 +192,7 @@
 
         // Store output for 3 channels in memory
         SBBO    OUTPUT1, HOST_MEM, BYTE_COUNTER, 4 * 3  // 3 + 2 = 5 cycles ??
-        // Increment the written bytes counter by 3 after writing 3 results
+        // Increment the written bytes counter by 3 * 4 after writing 3 results
         ADD     BYTE_COUNTER, BYTE_COUNTER, 3 * 4
 .endm
 
@@ -184,16 +201,8 @@
 .entrypoint start
 
 start:
-    // ### Setup start configuration ###
-    // Set all register values to zero, except r30 and r31, for all banks
-    // Make sure bank 0 is also set to 0
-    ZERO    0, 120
-    XOUT    BANK0, r0, 120
-    XOUT    BANK1, r0, 120
-    XOUT    BANK2, r0, 120
-
     // ### Memory management ###
-    // Enable OCP master ports in SYSCFG register
+    // Enable OCP master ports in SYSCFG register to enable writing to the host memory.
     LBCO    r0, C4, 4, 4
     CLR     r0, r0, 4
     SBCO    r0, C4, 4, 4
@@ -211,7 +220,15 @@ start:
     SET     r0, r0, 1
     SBCO    r0, C4, 0x34, 4
 
-    // Set the right offset for the beginning
+    // ### Setup start configuration ###
+    // Set all register values to zero, except r30 and r31, for all banks
+    // Make sure bank 0 is also set to 0
+    ZERO    0, 120
+    XOUT    BANK0, r0, 120
+    XOUT    BANK1, r0, 120
+    XOUT    BANK2, r0, 120
+
+    // Set the correct offset for the beginning
     LDI     XFR_OFFSET, 11
 
     // ##### CHANNELS 1 - 3 #####
@@ -243,7 +260,7 @@ chan3:
     // Load channel 3 registers from 1st half of BANK1
     XIN     BANK1, r1, 4 * 11
     // Integrator and comb stages
-    int_comb_chan3 chan4to6  // 20 cycles ??
+    int_comb_chan3 chan4to6  // 21 cycles (?)
         
 
     // ##### Channels 4 - 6 #####
@@ -283,14 +300,15 @@ chan6:
     XIN     BANK2, r1, 4 * 11
 
     // Integrator and comb stages
-    int_comb_chan3 chan1to3  // 20 cycles ??
+    int_comb_chan3 chan1to3  // 21 cycles (?)
 
     // If we reach this point, it means we reached R, so reset the counter
     LDI     SAMPLE_COUNTER, 0
 
     QBNE    check_half, BYTE_COUNTER, HOST_MEM_SIZE
     // We filled the whole buffer, interrupt the host
-    // TODO: we could store which buffer half has just been written, to avoid desync
+    // TODO: We could store which buffer half has just been written.
+    // This would allow the host to check for missed buffer halves.
     MOV     r31.b0, PRU1_ARM_INTERRUPT + 16
     // Reset counter/offset, which will make us write to the beginning of host memory again
     LDI     BYTE_COUNTER, 0
