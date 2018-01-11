@@ -71,6 +71,8 @@ First of all, make sure you have the required hardware: the BeagleBone Black, an
 
 ![The Octopus Board, although the program only supports 6 channels for now, it has 8 mics](Pictures/kurodako.jpg)
 
+![The BBB with the Octopus Board, ready to be used!](Pictures/finished.jpg)
+
 #### Configure `uio_pruss` and free the GPIO pins for the PRU
 
 *Note: this was tested on this kernel:* `Linux beaglebone 4.4.91-ti-r133 #1 SMP Tue Oct 10 05:18:08 UTC 2017 armv7l GNU/Linux`
