@@ -5,7 +5,7 @@
 
 #define OUTFILE "../output/interface.pcm"
 #define NSAMPLES 64000 * 1
-#define NCHANNELS 3
+#define NCHANNELS 6
 
 int main(void) {
     printf("\nStarting testing program!\n");
@@ -33,7 +33,7 @@ int main(void) {
     }
 
     struct timespec delay = { 0, 250000000 };  // Wait 250 ms
-    const size_t limit = 1000;
+    const size_t limit = 200;
     enable_recording();
         nanosleep(&delay, NULL);
         for (size_t i = 0; i < limit; ++i) {
