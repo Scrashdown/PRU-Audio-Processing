@@ -497,6 +497,8 @@ As explained earlier, the current implementation of the interface uses a very si
 
 A workaround to this would be to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the `liblfds` library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer). The library can be checked here : [https://liblfds.org/](https://liblfds.org/).
 
+Another idea would be to adapt the interface so that it could directly create a WAV file, and not a raw PCM file.
+
 ### Introduce further filtering on the host side
 
 As mentioned before, CIC filters are very efficient filters but they lack a flat frequency response with a sharp cutoff and we need an additional compensation filter appended after them to get a better response. The current implementation of the host interface does not implement such a filter yet but this is a possible and probably very useful improvement that could be made. A nice feature to have could be to make it modular such that it can accept many different types of compensation filters.
