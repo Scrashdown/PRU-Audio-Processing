@@ -39,24 +39,26 @@ ringbuffer_t * ringbuf_create(size_t blocksize, size_t nelem)
 
 size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_t block_count, int * overflow_flag)
 {
-    if (dst -> is_full) {
+    if (block_size == 0 || block_count == 0) {
         return 0;
     }
 
     // Get the distance between the tail and head pointers, and check we aren't trying to push too much data.
     size_t free_bytes;
-    if (dst -> head >= dst -> tail) {
+    if (dst -> is_full) {
+        free_bytes = 0;
+    } else if (dst -> head >= dst -> tail) {
         free_bytes = (dst -> maxLength) - (dst -> head) + (dst -> tail);
     } else {
         free_bytes = (dst -> tail) - (dst -> head);
     }
 
-    const size_t to_write = block_size * block_count;
+    size_t to_write = block_size * block_count;
     // Check if an overflow will occur or not.
     *overflow_flag = (free_bytes < to_write) ? 1 : 0;
 
     // Copy the data
-    // DO NOT COPY EVERYTHING AT ONCE, we might need to copy in 2 parts if we have to loop back to the beginning of the actual buffer in memory
+    // DO NOT COPY EVERYTHING AT ONCE, we need to copy in 2 parts if we have to loop back to the beginning of the actual buffer in memory
     if ((dst -> maxLength - dst -> head) > to_write) {
         // Can copy everything at once
         memcpy(&(dst -> data[dst -> head]), data, to_write);
@@ -70,6 +72,12 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
     // Adjust head pointer
     dst -> head += to_write;
     dst -> head %= dst -> maxLength;
+    // In case of an overflow, adjust tail pointer as well
+    if (overflow_flag) {
+        dst -> tail = dst -> head;
+    }
+    
+    // Check if the buffer is now full
     dst -> is_full = (dst -> head == dst -> tail) ? 1 : 0;
     return to_write / block_size;
 }
@@ -87,8 +95,9 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
         available_bytes = (src -> maxLength) - (src -> tail) + (src -> head);
     }
 
-    // Read only the maximum amount of data possible without underflow.
-    const size_t to_read = (block_size * block_count) > available_bytes ? available_bytes : (block_size * block_count);
+    // Read only the maximum amount of data possible such that no block is partially read
+    size_t to_read = (block_size * block_count) > available_bytes ? available_bytes : (block_size * block_count);
+    to_read -= to_read % block_size;
     
     // Copy the data
     // DO NOT COPY EVERYTHING AT ONCE, we might need to copy in 2 parts if we have to loop back to the beginning of the actual buffer in memory
@@ -104,7 +113,7 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
     // Adjust tail pointer
     src -> tail += to_read;
     src -> tail %= src -> maxLength;
-    src -> is_full = src -> is_full && !to_read;
+    src -> is_full = src -> is_full && (to_read == 0);
     return to_read / block_size;
 }
 
