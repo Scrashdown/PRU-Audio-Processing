@@ -51,7 +51,6 @@ void *processing_routine(void * __args)
     // Process indefinitely
     while (1) {
         prussdrv_pru_wait_event(next_evt);
-        printf("INTERRUPT!\n");
         if (next_evt == PRU_EVTOUT_0) {
             // Even though we are using PRU1, I have to use PRU0_ARM_INTERRUPT in this case for it to work.
             // I truly have no clue of why this is happening.
