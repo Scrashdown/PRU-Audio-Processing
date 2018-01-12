@@ -2,7 +2,7 @@
  * @brief Simple implementation of a single-threaded ringbuffer/queue.
  *        Inspired by : https://embedjournal.com/implementing-circular-buffer-embedded-c/
  * 
- * @author Loïc Droz
+ * @author Loïc Droz <lk.droz@gmail.com>
  * 
  * 
  */
@@ -76,7 +76,7 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
     dst -> head += to_write;
     dst -> head %= dst -> maxLength;
     // In case of an overflow, adjust tail pointer as well
-    if (overflow_flag) {
+    if (*overflow_flag) {
         dst -> tail = dst -> head;
     }
     
