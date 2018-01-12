@@ -63,7 +63,7 @@ size_t ringbuf_push(ringbuffer_t * dst, uint8_t * data, size_t block_size, size_
         // Can copy everything at once
         memcpy(&(dst -> data[dst -> head]), data, to_write);
     } else {
-        // Need to copy the first half up to the end of the actual buffer in memory from head, then copy the rest to the beginning of the said buffer
+        // Copy the first half up to the end of the actual buffer in memory from head, then copy the rest to the beginning of the said buffer
         const size_t first_half_len = dst -> maxLength - dst -> head;
         memcpy(&(dst -> data[dst -> head]), data, first_half_len);
         memcpy(dst -> data, &data[first_half_len], to_write - first_half_len);
@@ -100,11 +100,11 @@ size_t ringbuf_pop(ringbuffer_t * src, uint8_t * data, size_t block_size, size_t
     to_read -= to_read % block_size;
     
     // Copy the data
-    // DO NOT COPY EVERYTHING AT ONCE, we might need to copy in 2 parts if we have to loop back to the beginning of the actual buffer in memory
+    // DO NOT COPY EVERYTHING AT ONCE, we need to copy in 2 parts if we have to loop back to the beginning of the actual buffer in memory
     if ((src -> maxLength - src -> tail) > to_read) {
         memcpy(data, &(src -> data[src -> tail]), to_read);
     } else {
-        // Need to copy the first half up to the end of the actual buffer in memory from head, then copy the rest from the beginning of the said buffer
+        // Copy the first half up to the end of the actual buffer in memory from head, then copy the rest from the beginning of the said buffer
         const size_t first_half_len = src -> maxLength - src -> tail;
         memcpy(data, &(src -> data[src -> tail]), first_half_len);
         memcpy(&data[first_half_len], src -> data, to_read - first_half_len);
