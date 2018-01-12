@@ -1,27 +1,9 @@
-/* Code for the CIC filter in PRU1. */
-
-/* PSEUDOCODE:
-
-Wait for falling (rising ?) edge...
-Wait for t_dv time (max 125ns, so 25 cycles)...
-Read data from the DATA signal.
-
-counter += 1
-r0 += data   // XXX: why not just equals ?
-r1 += r0
-r2 += r1
-r3 += r2
-
-if counter % R == 0:
-    // TODO
-
-*/
-
-/* Instructions set and macros:
-
-http://processors.wiki.ti.com/index.php/PRU_Assembly_Instructions
-
-*/
+/**
+ * @brief Simple 1 channel CIC filter.
+ * 
+ * @author Loïc Droz <lk.droz@gmail.com>
+ * 
+ */
 
 #include "prudefs.hasm"
 

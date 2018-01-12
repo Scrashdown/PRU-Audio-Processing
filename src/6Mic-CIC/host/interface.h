@@ -1,6 +1,8 @@
 /**
  * @brief Very basic interface for reading audio using the PRU firmware.
  * 
+ * @author Loïc Droz <lk.droz@gmail.com>
+ * 
  */
 
 #include "ringbuffer.h"

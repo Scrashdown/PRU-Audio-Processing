@@ -1,3 +1,10 @@
+/**
+ * @brief Example program for using the interface.
+ * 
+ * @author Loïc Droz <lk.droz@gmail.com>
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

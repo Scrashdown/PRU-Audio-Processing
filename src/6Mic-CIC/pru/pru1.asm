@@ -1,18 +1,15 @@
 /**
- * Code for the CIC Filter on PRU1 with 6 channels.
+ * @brief Code for the CIC Filter on PRU1 with 6 channels.
+ *        Instruction set :
+ *        http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
  * 
- * Instruction set :
- * http://processors.Wiki.ti.com/index.php/PRU_Assembly_Instructions
+ *        Current timings:
+ *        Rising edge data : 57 cycles (max = 72 at f_s = 1.028 MHz)
+ *        Falling edge data : 63 cycles (max = 72 at f_s = 1.028 MHz)
  * 
- * Current timings:
+ * @author Loïc Droz <lk.droz@gmail.com>
  * 
- * Rising edge data : 57 cycles (max = 72 at f_s = 1.028 MHz)
- * Falling edge data : 63 cycles (max = 72 at f_s = 1.028 MHz)
- * 
- * 
- * 
- * */
-
+ */
 
 // ### Register aliases
 

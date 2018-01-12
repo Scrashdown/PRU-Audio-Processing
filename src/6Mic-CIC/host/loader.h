@@ -1,7 +1,7 @@
 /**
  * @brief Headers for functions required to load, start and stop the PRU firmware.
  * 
- * @author Loïc Droz
+ * @author Loïc Droz <lk.droz@gmail.com>
  */
 
 

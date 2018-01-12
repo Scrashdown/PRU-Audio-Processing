@@ -1,6 +1,9 @@
 /**
- * Very simple implementation of a byte ringbuffer.
- * Inspired by : https://embedjournal.com/implementing-circular-buffer-embedded-c/
+ * @brief Simple implementation of a single-threaded ringbuffer/queue.
+ *        Inspired by : https://embedjournal.com/implementing-circular-buffer-embedded-c/
+ * 
+ * @author Loïc Droz
+ * 
  * 
  */
 

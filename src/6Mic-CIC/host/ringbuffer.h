@@ -1,6 +1,8 @@
 /**
  * @brief Simple implementation of a single-threaded ringbuffer/queue.
  * 
+ * @author Loïc Droz <lk.droz@gmail.com>
+ * 
  */
 
 #include <stdlib.h>

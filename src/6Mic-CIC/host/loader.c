@@ -1,12 +1,9 @@
-// Loads the PRU files, executes them, and waits for completion.
-//
-// Usage:
-// $ ./loader pru1.bin
-//
-// Compile with:
-// gcc -o loader loader.c -lprussdrv
-//
-// Based on https://credentiality2.blogspot.com/2015/09/beaglebone-pru-gpio-example.html
+/**
+ * @brief Loads the PRU files, executes them, and waits for completion. Headers in loader.h.
+ * 
+ * @author Loïc Droz <lk.droz@gmail.com>
+ * 
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
