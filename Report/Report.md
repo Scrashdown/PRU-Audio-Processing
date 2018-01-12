@@ -1,4 +1,3 @@
-# Audio processing on the BeagleBone Black's Programmable Real-time Unit
 
 ## Introduction / Motivation
 
@@ -218,7 +217,7 @@ Since we are using the Octopus board, we have to read data at every edge of the 
     * Read chan. 3 input data.
     * Perform one iteration of the filter.
         * If the oversampling counter reached R, execute the comb stages and store chan 3 output in a register.
-    * Write chan. 1-3 outputs to host buffer.
+    * Write chan. 1-3 outputs to host buffer and increment bytes counter.
     * Store chan. 3 registers to BANK1.
 * Same for channels 4-6. Details :
     * Load chan. 4, 5 registers from BANK1 and BANK2.
@@ -230,9 +229,9 @@ Since we are using the Octopus board, we have to read data at every edge of the 
     * Read chan. 6 input data.
     * Perform one iteration of the filter.
         * If the oversampling counter reached R, execute the comb stages and store chan 6 output in a register.
-    * Write chan. 4-6 outputs to host buffer.
+    * Write chan. 4-6 outputs to host buffer and increment bytes counter.
     * Store chan. 6 registers to BANK2.
-* Increment the written bytes counter. If the end of the buffer has been reached, send interrupt 1 to the host and start writing to the beginning of the buffer again. If the middle of the buffer has just been reached, send interrupt 0 to the host and continue writing.
+* Check the written bytes counter. If the end of the buffer has been reached, send interrupt 1 to the host and start writing to the beginning of the buffer again. If the middle of the buffer has just been reached, send interrupt 0 to the host and continue writing.
 * Loop back to the beginning.
 
 In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
