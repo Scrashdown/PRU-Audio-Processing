@@ -7,7 +7,7 @@ pdf: clean
 	-V geometry:margin=1.75cm \
 	-V urlcolor=cyan \
 	--variable=documentclass:report \
-	--toc -V fontsize=12pt
+	-V fontsize=12pt
 
 latex: clean
 	pandoc -o Report.tex Report.md \
