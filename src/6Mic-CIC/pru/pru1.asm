@@ -204,14 +204,6 @@ start:
     CLR     r0, r0, 4
     SBCO    r0, C4, 4, 4
 
-    // ### Retrieve HOST buffer address and size from PRU memory (wr. by the host) ###
-    // Temporarily store local mem. address
-    LDI     r0, LOCAL_MEM_ADDR
-    // From local memory, grab the address of the host memory (passed by the host before this program started)
-    LBBO    HOST_MEM, r0, 0, 4
-    // Likewise, grab the host memory length
-    LBBO    HOST_MEM_SIZE, r0, 4, 4
-
     // ### Enable XIN/XOUT shift functionality ###
     LBCO    r0, C4, 0x34, 4
     SET     r0, r0, 1
@@ -225,7 +217,16 @@ start:
     XOUT    BANK1, r0, 120
     XOUT    BANK2, r0, 120
 
+    // ### Retrieve HOST buffer address and size from PRU memory (wr. by the host) ###
+    // Temporarily store local mem. address
+    LDI     r0, LOCAL_MEM_ADDR
+    // From local memory, grab the address of the host memory (passed by the host before this program started)
+    LBBO    HOST_MEM, r0, 0, 4
+    // Likewise, grab the host memory length
+    LBBO    HOST_MEM_SIZE, r0, 4, 4
+
     // Set the correct offset for the beginning
+    LDI     r0, 0
     LDI     XFR_OFFSET, 11
 
     // ##### CHANNELS 1 - 3 #####
