@@ -73,6 +73,7 @@ int PRU_proc_init(volatile void ** buf, unsigned int * buf_len) {
     prussdrv_init();
 	if (prussdrv_open(PRU_EVTOUT_0) || prussdrv_open(PRU_EVTOUT_1)) {
         fprintf(stderr, "PRU1 : prussdrv_open failed\n");
+        prussdrv_exit();
         return -1;
     }
 

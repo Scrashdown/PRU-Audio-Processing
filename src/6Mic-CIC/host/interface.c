@@ -51,6 +51,7 @@ void *processing_routine(void * __args)
     // Process indefinitely
     while (1) {
         prussdrv_pru_wait_event(next_evt);
+        printf("INTERRUPT!\n");
         if (next_evt == PRU_EVTOUT_0) {
             // Even though we are using PRU1, I have to use PRU0_ARM_INTERRUPT in this case for it to work.
             // I truly have no clue of why this is happening.
@@ -109,6 +110,7 @@ pcm_t * pru_processing_init(void)
     // Initialize ringbuffer
     ringbuffer_t * ringbuf = ringbuf_create(pcm -> PRU_buffer_len, SUB_BUF_NB);
     if (ringbuf == NULL) {
+        stop_program();
         free(pcm);
         return NULL;
     }
@@ -130,6 +132,7 @@ pcm_t * pru_processing_init(void)
     if (pthread_create(&PRU_thread, &PRU_thread_attr, processing_routine, NULL)) {
         fprintf(stderr, "Error! Audio capture thread could not be created.\n");
         pthread_attr_destroy(&PRU_thread_attr);
+        stop_program();
         ringbuf_free(ringbuf);
         free(pcm);
         return NULL;
@@ -212,6 +215,7 @@ void disable_recording(void)
 
 void pru_processing_close(pcm_t * pcm)
 {
+    stop_program();
     // Stop PRU processing thread
     args.stop_thread_flag = 1;
     // Destroy its attribute
