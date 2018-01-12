@@ -6,6 +6,7 @@
 
 
 int main(void) {
+    int overflow;
     printf("\nSTARTING RINGBUFFER TESTING PROGRAM!\n");
 
     printf("TEST: A newly created buffer has length 0: ");
@@ -25,7 +26,7 @@ int main(void) {
 
     printf("TEST: A buffer has maxLength nelem * blocksize : ");
     if (ringbuf -> maxLength == nelem * blocksize) {
-        printf("Success!\n");
+        printf("Success! Maxlength = %zu\n", ringbuf -> maxLength);
     } else {
         printf("Failure! Expected maxLength is %zu but found %zu\n", ringbuf -> maxLength, nelem * blocksize);
     }
@@ -36,13 +37,14 @@ int main(void) {
     for (size_t i = 0; i < data_len; ++i) {
         data[i] = i;
     }
-    ringbuf_push(ringbuf, data, blocksize, 2);
+    ringbuf_push(ringbuf, data, blocksize, 2, &overflow);
     const size_t length2 = ringbuf_len(ringbuf);
     if (length2 == data_len) {
         printf("Success!\n");
     } else {
         printf("Failure! Expected buffer length %zu but found %zu.\n", data_len, length2);
     }
+
 
     printf("TEST: Popping N bytes of data after pushing N bytes gives out the same data, and length 0: ");
     uint8_t outdata[data_len];
@@ -78,36 +80,35 @@ int main(void) {
     } else {
         printf("Failure! %zu blocks were returned.\n", read);
     }
-
+    
     printf("TEST: Pushing maxLength bytes to an empty buffer does not cause an overflow: ");
     uint8_t data2[blocksize * nelem];
-    size_t written = ringbuf_push(ringbuf, data2, blocksize, nelem);
+    size_t written = ringbuf_push(ringbuf, data2, blocksize, nelem, &overflow);
     if (written == nelem) {
         printf("Success!\n");
     } else {
         printf("Failure! Expected %zu blocks to be written but found %zu.\n", nelem, written);
     }
 
-    printf("TEST: Pushing some data to a full buffer causes an overflow: ");
-    written = ringbuf_push(ringbuf, data2, blocksize, 1);
-    if (written == 0) {
+    printf("TEST: Pushing some data to a full buffer causes an overflow but data is still written: ");
+    written = ringbuf_push(ringbuf, data2, blocksize, 1, &overflow);
+    if (overflow && written == 1) {
         printf("Success!\n");
     } else {
-        printf("Failure! Expected %zu to be written but found %zu.\n", 0, written);
+        printf("Failure! Expected %zu to be written but found %zu. Overflow flag: %d\n", 0, written, overflow);
     }
 
     printf("TEST: Pushing data to an already overflowed buffer triggers a new overflow: ");
-    written = ringbuf_push(ringbuf, data2, blocksize, 1);
-    if (written == 0) {
+    written = ringbuf_push(ringbuf, data2, blocksize, 1, &overflow);
+    if (overflow && written == 1) {
         printf("Success!\n");
     } else {
-        printf("Failure! Expected %zu to be written but found %zu.\n", 0, written);
+        printf("Failure! Expected %zu to be written but found %zu. Overflow flag: %d\n", 0, written, overflow);
     }
 
     ringbuf_free(ringbuf);
 
     printf("TEST: Pushing and popping data to a huge buffer does not corrupt it: ");
-    printf("MARK\n");
     ringbuffer_t * huge_buffer = ringbuf_create(4 * 6, 20000);
     if (huge_buffer == NULL) {
         fprintf(stderr, "\nERROR: ringbuffer could not be created for test.\n");
@@ -116,25 +117,25 @@ int main(void) {
     uint8_t seven = 7;
     for (size_t i = 0; i < 4 * 6 * 20000; ++i) {
         //printf("TEST: i = %zu\n", i);
-        assert(1 == ringbuf_push(huge_buffer, &seven, 1, 1));
+        assert(1 == ringbuf_push(huge_buffer, &seven, 1, 1, &overflow));
     }
     uint8_t result = 0;
     success = 0;
     for (size_t i = 0; i < 4 * 6 * 20000; ++i) {
         assert(1 == ringbuf_pop(huge_buffer, &result, 1, 1));
-        if (result != 7) {
+        if (result != seven) {
             success += 1;
         }
     }
-    //printf("MARK\n");
-    if (success) {
+    assert(0 == ringbuf_len(huge_buffer));
+    if (success == 0) {
         printf("Success!\n");
     } else {
         printf("Failure!\n");
     }
-
+    
     ringbuf_free(huge_buffer);
     printf("EXITING TESTING PROGRAM\n");
-
+    
     return 0;
 }
