@@ -178,7 +178,7 @@ required bit width for all stages of the filter.
 \section{Getting Started}\label{getting-started}}
 
 First of all, make sure you have the required hardware: the BeagleBone
-Black, an SD card, and the Octopus Board. Flash the board with the
+Black, an SD card, and the Kurodako Board. Flash the board with the
 latest "IoT" Debian image following these
 \href{https://beagleboard.org/getting-started}{instructions}\footnote{\url{https://beagleboard.org/getting-started}}.
 
@@ -191,14 +191,14 @@ latest "IoT" Debian image following these
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.4\linewidth]{Pictures/kurodako.jpg}
-\caption{The Octopus Board, although the program only supports 6
+\caption{The Kurodako Board, although the program only supports 6
 channels for now, it has 8 mics.}
 \end{figure}
 
 \begin{figure}
 \centering
 \includegraphics[width=0.4\linewidth]{Pictures/BBBkurodako.jpg}
-\caption{The BBB with the Octopus Board, ready to be used!}
+\caption{The BBB with the Kurodako Board, ready to be used!}
 \end{figure}
 
 %\hypertarget{configure-uio\_pruss-and-free-the-gpio-pins-for-the-pru}{%
@@ -310,7 +310,7 @@ If everything went well, the \texttt{prussdrv} library and the
 be used.
 
 \hypertarget{plug-the-octopus-board-and-write-some-code}{%
-\subsection{Plug the Octopus board and write some
+\subsection{Plug the Kurodako board and write some
 code!}\label{plug-the-octopus-board-and-write-some-code}}
 
 The code for the CIC filter and the interface can be found in
@@ -371,7 +371,7 @@ The DATA pin of the microphone is then connected to a pin of the board which is 
 
 Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones per board's pin. To achieve this, we set one of the SELECT lines of the microphones to 2 different values. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid a short circuit between the 2 microphones connected to the same pin, it is necessary to place a resistor between one of the microphones (for example, between all rising edge microphones) and the BeagleBone Black pin.
 
-Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for \texttt{t\_dv} twice instead of only once with the `simple' solution using 6 pins. This is because in this case, to retrieve data from all microphones, we have to wait for \texttt{t\_dv} after the rising edge \emph{and} after the falling edge of the clock. According to the microphone's datasheet, \texttt{t\_dv} can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Octopus board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
+Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for \texttt{t\_dv} twice instead of only once with the `simple' solution using 6 pins. This is because in this case, to retrieve data from all microphones, we have to wait for \texttt{t\_dv} after the rising edge \emph{and} after the falling edge of the clock. According to the microphone's datasheet, \texttt{t\_dv} can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Kurodako board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
 
 \begin{figure}[h]
 \centering
@@ -398,7 +398,7 @@ The core audio processing code, which implements the CIC filter, is running on t
 
 For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpads as well. It does so by exchanging some of its registers with the scratchpads using the XIN and XOUT instructions. We have to keep track of several different counters along the way, and also do the correct register exchanges with the scratchpads to keep any data from being overwritten. The counters are needed for implementing the decimator, waiting for \texttt{t\_dv} and keeping track of how many samples have been written to the host's memory, so that it can be interrupted when some data is ready.
 
-Since we are using the Octopus board, we have to read data at every edge
+Since we are using the Kurodako board, we have to read data at every edge
 of the clock. The processing is done in several steps :
 
 \begin{itemize}
@@ -717,7 +717,7 @@ At the time of writing this report, the 6-channels implementation works.
 
 The C interface has been tested recording samples for up to 5 minutes and appears to work.
 
-We have noticed that some occasional glitches appeared in the signal while using a microphone connected using a breadboard and soldered by hand. However, these glitches seem to have disappeared when we started using the Octopus Board.
+We have noticed that some occasional glitches appeared in the signal while using a microphone connected using a breadboard and soldered by hand. However, these glitches seem to have disappeared when we started using the Kurodako Board.
 
 More rigorous testing needs to be done to make sure the PRU processing code and the interface work as intended.
 
