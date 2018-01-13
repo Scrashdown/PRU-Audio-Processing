@@ -332,7 +332,7 @@ diagram}\label{microphones-and-wiring-diagram}}
 
 For this project, we are using the Knowles SPM1437HM4H-B microphones
 which output a PDM signal at a very high frequency (\textgreater{} 1
-MHz), see the microphone's data sheet in the documentation for more
+MHz), see the microphone's data sheet for more
 details. They have 6 pins :
 
 \begin{itemize}
@@ -349,7 +349,7 @@ details. They have 6 pins :
   \textbf{DATA} (output) : The microphone's PDM output. Its sample rate
   equals that of the CLOCK signal. The DATA signal is ready shortly
   after the rising or falling edge of the CLK. This delay is variable,
-  but is between 18 ns and 125 ns. It is designated in the documentation
+  but is between 18 ns and 125 ns. It is designated in the microphone documentation
   as \texttt{t\_dv}.
 \item
   \textbf{SELECT} (input) : Selects whether data is ready after rising
@@ -369,7 +369,7 @@ The DATA pin of the microphone is then connected to a pin of the board which is 
 \caption{Wiring of one microphone to the board}
 \end{figure}
 
-Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones per board's pin. To achieve this, we set one of the SELECT lines of the microphones to 2 different values. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid a short circuit between the 2 microphones connected to the same pin, it is necessary to place a resistor between one of the microphones (for example, between all rising edge microphones) and the BeagleBone Black pin.
+Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones per board's pin. To achieve this, we set one of the SELECT lines of the microphones to 2 different values. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid a short circuit between the 2 microphones connected to the same pin, it is necessary to place a resistor between one of the microphones (for example, between all rising edge microphones) and the BeagleBone Black pin. This method has the advantage of using 3 pins on the BBB instead of 6.
 
 Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for \texttt{t\_dv} twice instead of only once with the `simple' solution using 6 pins. This is because in this case, to retrieve data from all microphones, we have to wait for \texttt{t\_dv} after the rising edge \emph{and} after the falling edge of the clock. According to the microphone's datasheet, \texttt{t\_dv} can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Kurodako board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
 
