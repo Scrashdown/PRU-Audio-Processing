@@ -533,7 +533,7 @@ Furthermore, since we use the PRU's 3 additional register banks, we cannot use a
 
 Another thing we need to take into account is that, apart from channel private data (values involved in the CIC filter computations for each channel), we also need to keep track of some channel \textit{independent} data : a byte counter to keep track of the number of bytes written in the host buffer, a sample counter to implement decimation, the host buffer's size and address and temporary values used for delaying and processing input. This data has to stay on the PRU at all times.
 
-We can fit the decimation counter in a single byte, as long as it does not exceed 255. However, the byte counter needs a complete register. The host's buffer size and address also each need one complete register. Finally, to store the temporary values that are a delay counter and the state of the PRU input pins.
+We can fit the decimation counter in a single byte, as long as it does not exceed 255. However, the byte counter needs a complete register. The host's buffer size and address also each need one complete register. Finally, we can use one half register to store a temporary counter for implementing delays and also extracting single bits from the r31 register (input pins).
 
 Also, in our implementation, even though we have 6 channels, we only have 3 output registers. After filling the 3 registers, their contents are written to the host buffer and they can be used to store new inputs.
 
