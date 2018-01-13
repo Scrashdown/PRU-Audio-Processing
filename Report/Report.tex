@@ -42,6 +42,22 @@
 	title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
 }
 
+\lstset{literate=
+	{á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+	{Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+	{à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+	{À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+	{ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+	{Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+	{â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+	{Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+	{œ}{{\oe}}1 {Œ}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
+	{ű}{{\H{u}}}1 {Ű}{{\H{U}}}1 {ő}{{\H{o}}}1 {Ő}{{\H{O}}}1
+	{ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
+	{€}{{\euro}}1 {£}{{\pounds}}1 {«}{{\guillemotleft}}1
+	{»}{{\guillemotright}}1 {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?`}}1
+}
+
 % call as such : \lstinputlisting[language=C]{interface.h}
 
 \providecommand{\tightlist}{%
@@ -65,8 +81,10 @@ The audio processing code currently handles the 6 microphones at a fixed output 
 
 Running the core audio processing code on the PRU instead of the main ARM CPU allows for lower latency due to the PRU's predictable timing and it not being subject to OS scheduling like a typical Linux process running on the ARM CPU would be. Offloading the ARM CPU from such an intensive task also prevents our library from having a significant impact on the global performance of the host when it is used.
 
-The code and documentation can be found here :
-\url{https://github.com/Scrashdown/PRU-Audio-Processing}.
+The code and documentation can be found at the link below:
+\begin{center}
+	\url{https://github.com/Scrashdown/PRU-Audio-Processing}
+\end{center}
 
 %\hypertarget{theory}{%
 %	\chapter{Theory}\label{theory}}
@@ -180,10 +198,15 @@ channels for now, it has 8 mics.}
 \caption{The BBB with the Octopus Board, ready to be used!}
 \end{figure}
 
-\hypertarget{configure-uio\_pruss-and-free-the-gpio-pins-for-the-pru}{%
-\subsection{\texorpdfstring{Configure \texttt{uio\_pruss} and free
-the BBB GPIO pins for the
-PRU}{Configure uio\_pruss and free the BBB GPIO pins for the PRU}}\label{configure-uio\_pruss-and-free-the-gpio-pins-for-the-pru}}
+%\hypertarget{configure-uio\_pruss-and-free-the-gpio-pins-for-the-pru}{%
+%\subsection{\texorpdfstring{Configure \texttt{uio\_pruss} and free
+%the BBB GPIO pins for the
+%PRU}{Configure uio\_pruss and free the BBB GPIO pins for the PRU}}\label{configure-uio\_pruss-and-free-the-gpio-pins-for-the-pru}}
+
+\hypertarget{configure-uio-pruss-and-free-the-gpio-pins-for-the-pru}{%
+	\subsection{\texorpdfstring{Configure \texttt{uio\_pruss} and free
+			the BBB GPIO pins for the
+			PRU}{Configure uio\textunderscore pruss and free the BBB GPIO pins for the PRU}}\label{configure-uio-pruss-and-free-the-gpio-pins-for-the-pru}}
 
 \emph{Note: this was tested on this kernel:}
 \texttt{Linux beaglebone\ 4.4.91-ti-r133\ \#1\ SMP\ Tue\ Oct\ 10\ 05:18:08\ UTC\ 2017\ armv7l\ GNU/Linux}

@@ -9,6 +9,7 @@ src/*/output/*
 loader
 main
 
+*Report.pdf
 *Report.aux
 *Report.log
 *Report.synctex.gz
