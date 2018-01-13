@@ -75,9 +75,9 @@
 \hypertarget{introduction-motivation}{%
 \chapter{Introduction / Motivation}\label{introduction-motivation}}
 
-The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to make it easily usable as a simple C library. The input signals come from 6 Knowles SPM1437HM4H-B microphones connected to the board, each with a 1-bit wide signal (Pulse Density Modulation, more on that later).
+The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to make it easily usable as a simple C library. The input signals come from 6 Knowles SPM1437HM4H-B microphones connected to the board, each with a 1-bit wide signal (Pulse Density Modulation, see Section~\ref{audio-processing}).
 
-The audio processing code currently handles the 6 microphones at a fixed output sample rate, using one of the 2 PRUs present on the board. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of the data on the API side, to prevent overflows in case the user wants to momentarily stop reading data.
+The audio processing code currently handles the six microphones at a fixed output sample rate, using one of the 2 PRUs present on the board. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of the data on the API side, to prevent overflows in case the user wants to momentarily stop reading data.
 
 Running the core audio processing code on the PRU instead of the main ARM CPU allows for lower latency due to the PRU's predictable timing and it not being subject to OS scheduling like a typical Linux process running on the ARM CPU would be. Offloading the ARM CPU from such an intensive task also prevents our library from having a significant impact on the global performance of the host when it is used.
 
@@ -96,11 +96,11 @@ The code and documentation can be found at the link below:
 
 The PRUSS is a module of the ARM CPU used on the BeagleBone Black. It stands for PRU SubSystem, where PRU stands for Programmable Real-time Unit. The PRUSS contains 2 PRUs which are essentially very small and simple 32-bit microprocessors running at 200 MHz and using a custom instruction set. Each PRU has a constant 200 MHz clock rate, 8 kB of instruction memory, 8 kB of data memory, along with 12 kB of data memory shared between the 2 PRUs. They can be programmed either in assembly using the \texttt{pasm} assembler or in C using the \texttt{clpru} and \texttt{lnkpru} tools.
 
-Each PRU has 32, 32-bit registers, where R30 is used for interacting with the PRU's output pins and R31 is used for reading inputs from these pins and triggering interrupts by writing to it. Both PRUs also share 3 registers banks, also called scratchpads, which are banks containing 30 additional registers. Registers can be transferred in and out between these banks and each PRU in one cycle by using specialized assembly instructions (\texttt{XIN} / \texttt{XOUT} / \texttt{XCHG}, commonly called \texttt{XFR} instructions in the PRU Reference Manual). Furthermore, one PRU can also access the registers of the other PRU using the same assembly instructions.
+Each PRU has 32, 32-bit registers, where R30 is used for interacting with the PRU's output pins and R31 is used for reading inputs from these pins and triggering interrupts by writing to it. Both PRUs also share 3 registers banks, also called \emph{scratchpads}, which each contain 30 additional registers. Registers can be transferred in and out between these banks and each PRU in one cycle by using specialized assembly instructions (\texttt{XIN} / \texttt{XOUT} / \texttt{XCHG}, commonly called \texttt{XFR} instructions in the PRU Reference Manual). Furthermore, one PRU can also access the registers of the other PRU using the same assembly instructions.
 
 The PRUs are designed to be as time-deterministic as possible. That is, pretty much all instructions will execute in a constant number of cycles (usually 1, therefore in 5 ns at the 200 MHz clock rate) except for the memory instructions which may vary in execution time.
 
-The PRUSS also contains an interrupt controller which allows the PRU to send and receive interrupts to and from the ARM CPU. It can be configured either from the PRUs themselves by changing the values of the configuration registers, or from the ARM CPU using the \texttt{prussdrv} library along with the \texttt{uio\_pruss} driver (more information on that below).
+The PRUSS also contains an interrupt controller which allows the PRU to send and receive interrupts to and from the ARM CPU. It can be configured either from the PRUs themselves by changing the values of the configuration registers, or from the ARM CPU using the \texttt{prussdrv} library along with the \texttt{uio\_pruss} driver (more information on that in Section~\ref{configure-uio-pruss-and-free-the-gpio-pins-for-the-pru}).
 
 Using the PRUSS requires a driver. Currently, there are 2 choices available : \texttt{uio\_pruss} (along with the \texttt{prussdrv} library) and the newer \texttt{pru\_rproc}. \texttt{uio\_pruss} provides a lower level interface than \texttt{pru\_rproc}. \texttt{pru\_rproc} provides a C library for message passing between the PRU and the ARM CPU which makes programming simpler than with \texttt{uio\_pruss}. However, the current lack of examples online for using \texttt{pru\_rproc}, along with performance issues encountered using it for this project, made us choose \texttt{uio\_pruss} instead.
 
@@ -109,7 +109,7 @@ That said, it seems \texttt{uio\_pruss} is currently being phased out of support
 \hypertarget{audio-processing}{%
 \section{Audio Processing}\label{audio-processing}}
 
-As mentioned earlier, we are using microphones with a 1-bit wide output at a very high sample rate (> 1 MHz). The signal these microphones input is a PDM (Pulse Density Modulation) signal which is of an unusual type and needs to be converted to a lower-rate PCM (Pulse-Code Modulation) signal, which is much more commonly used for storing audio data.
+As mentioned earlier, we are using microphones with a 1-bit wide output at a very high sample rate ($ > $~1~MHz). This type of signal is known as a PDM (Pulse Density Modulation) signal and needs to be converted to a lower-rate PCM (Pulse-Code Modulation) signal, which is much more commonly used for processing and storing audio data.
 
 \begin{figure}[h]
 \centering
@@ -123,16 +123,16 @@ As mentioned earlier, we are using microphones with a 1-bit wide output at a ver
 \caption{Illustration of a PDM}
 \end{figure}
 
-In a PCM signal, each value represents its amplitude on a fixed scale at a fixed time. However, in a PDM signal, its amplitude at a given time is represented by the density of 1's relative to 0's at the said time. Converting a PDM signal to a PCM signal therefore requires using some kind of a moving-average filter.
+In a PCM signal, each value represents its amplitude on a fixed scale at a fixed time. However, in a PDM signal, its amplitude at a given time is represented by the density of 1's relative to 0's at a given time. Converting a PDM signal to a PCM signal therefore requires using some form of a moving-average filter.
 
 \hypertarget{cic-filter}{%
 \subsection{CIC Filter}\label{cic-filter}}
 
-Because we wanted to run this filter on the PRU with rather tight timing constraints, we chose to implement a CIC filter. CIC stands for Cascaded Integrator-Comb filter. There are two general types of CIC filters : the decimation filters, which are the type we're using in this project, and the interpolation filters. From now on we will call CIC decimator filters simply CIC filters.
+Because we wanted to run this filter on the PRU with rather tight timing constraints, we chose to implement a Cascaded Integrator-Comb (CIC) filter. There are two general types of CIC filters: the decimation filters, which are the type we're using in this project, and the interpolation filters. From now on we will call CIC decimator filters simply CIC filters.
 
-It is essentially an efficient implementation of a moving-average filter which uses only additions and subtractions and also has a finite impulse response (FIR). Although the PRU is capable of performing unsigned integer multiplications (required by other types of FIR filters) by using its Multiply and Accumulate Unit, they take several more cycles to execute than the one-cycle instructions used for regular additions and subtractions. Since our goal is to handle several channels at once with very tight timing constraints, computational savings really matter.
+The CIC filter is essentially an efficient implementation of a moving-average filter by using only additions and subtractions. It also has a finite impulse response (FIR). Although the PRU is capable of performing unsigned integer multiplications (required by other types of FIR filters) by using its Multiply and Accumulate Unit, they take several more cycles to execute than the one-cycle instructions used for regular additions and subtractions. Since our goal is to handle several channels at once with very tight timing constraints, computational savings really matter.
 
-A CIC filter also has a drawback however. Its frequency response is far from the ideal flat response with a sharp cutoff we would like to have. To get a sharper cutoff, it is necessary to append another filter to it, commonly called a compensation filter. That said, since a CIC filter's output is usually at a much lower rate (64 kHz for now) than its input (\textasciitilde 1.028 MHz), applying this filter after the CIC one will require much less computational resources than applying it on the raw, very high rate input signal from the microphones.
+A CIC filter also has a drawback however. Its frequency response is far from the ideal flat response with a sharp cutoff we would like to have. To get a sharper cutoff, it is necessary to cascade another filter, commonly called a \emph{compensation} filter, to the CIC output. That said, since a CIC filter's output is usually at a much lower rate (64 kHz for now) than its input ($ \approx $1.028 MHz), applying this filter after the CIC one will require much less computational resources than applying it on the raw, very high rate input signal from the microphones.
 
 In general, CIC filters are well suited as an efficient first filtering step, which efficiently downsamples the signal and gets rid of some of the higher frequencies. The reduced sample rate of the output reduces the computational power needed for additional FIR compensation filters, and therefore compensates their higher complexity.
 
@@ -150,7 +150,7 @@ Now let's dive into more detail about the CIC filter. The filter has 3 parameter
 \caption{Structure of a CIC decimation filter}
 \end{figure}
 
-The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. More detailed explanation will follow in the implementation section of this report. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
+The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. More detailed explanation will follow in the implementation section of this report - Section~\ref{implementation}. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
 
 \begin{itemize}
 \tightlist
@@ -160,11 +160,14 @@ The filter's resource usage depends on its parameters, the platform on which it 
   Computational resource usage is inversely correlated to R : Since the comb stages are preceded by a decimator of rate R, the comb stages need to be updated R times less often than the integrator stages. Therefore, as R increases, less computational power is required by the comb stages. However, the reduction cannot be arbitrarily high, because the integrator stages always need to be updated at the very high input sample rate, independently of R. The processing power needed for these stages, and any other overhead added by the implementation, constitute therefore a lower-bound of the total processing power required to run the filter.
 \end{itemize}
 
-Finally, some important things to know about CIC decimation filters is that overflows will occur in the integrator stages. However, the output of the filter will still be correct if each stage follows modular arithmetic rules (PRU registers do, since they can overflow and loop back to zero) and if each stage has a bit width large enough that it can support the maximum value expected at the end of the filter. To check the second condition, a formula exists to find out about the required bit width of the stages for the filter to be correct (described in Hogenhauer's paper) :
+Finally, some important things to know about CIC decimation filters is that overflows will occur in the integrator stages. However, the output of the filter will still be correct if each stage follows modular arithmetic rules (PRU registers do, since they can overflow and loop back to zero) and if each stage has a bit width large enough that it can support the maximum possible value at the output of the filter. To check the second condition, a formula exists to find out about the required bit width of the stages for the filter to be correct (described in Hogenhauer's paper) :
 
-\[B_{out} = \lceil Nlog_2(RM) + B_{in} \rceil\]
+\begin{equation}
+\label{eq:bout}
+B_{out} = \lceil Nlog_2(RM) + B_{in} \rceil
+\end{equation}
 
-Where \(B_{in}\) is the bit width of the filter's input (in our case 1
+\noindent where \(B_{in}\) is the bit width of the filter's input (in our case 1
 bit), M, N and R are the filter's parameters, and \(B_{out}\) is the
 required bit width for all stages of the filter.
 
@@ -217,15 +220,15 @@ Some of them can be multiplexed to the PRUs. However, by default, some
 pins cannot be reassigned to something else. To correct this, we need to
 load a \href{https://elinux.org/Capemgr}{cape}\footnote{\url{https://elinux.org/Capemgr}}. To do so, open the
 \texttt{/boot/uEnv.txt} file on the board (backup it first!) and do the
-following modifications, then reboot :
+following modifications, then reboot :\\
 
-Add the following line :
+\noindent Add the following line :
 
 \begin{verbatim}
-cape_enable=bone_capemgr.enable_partno=cape-universala
+ cape_enable=bone_capemgr.enable_partno=cape-universala
 \end{verbatim}
 
-And comment the following line :
+\noindent And comment the following line :
 
 \begin{verbatim}
 enable_uboot_cape_universal=1
@@ -242,39 +245,39 @@ have to enable the UIO driver, which is disabled in favor of
 uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-4-TI-00A0.dtbo
 \end{verbatim}
 
-And uncomment this one :
+\noindent And uncomment this one :
 
 \begin{verbatim}
 uboot_overlay_pru=/lib/firmware/AM335X-PRU-UIO-00A0.dtbo
 \end{verbatim}
 
-Then :
+\noindent Then from the Terminal :
 
 \begin{verbatim}
 $ cd /opt/source/dtb-4.4-ti
 $ sudo nano src/arm/am335x-boneblack.dts
 \end{verbatim}
 
-Comment that line :
+\noindent Comment that line :
 
 \begin{verbatim}
 #include "am33xx-pruss-rproc.dtsi"
 \end{verbatim}
 
-And uncomment this one :
+\noindent And uncomment this one :
 
 \begin{verbatim}
 #include "am33xx-pruss-uio.dtsi"
 \end{verbatim}
 
-Then close nano and run the following commands :
+\noindent Then close nano and run the following commands :
 
 \begin{verbatim}
 $ make
 $ sudo make install
 \end{verbatim}
 
-This is the final step. Run
+\noindent This is the final step. Run
 \texttt{sudo\ nano\ /etc/modprobe.d/pruss-blacklist.conf} and add the
 following lines :
 
@@ -284,7 +287,7 @@ blacklist pruss_intc
 blacklist pru-rproc
 \end{verbatim}
 
-Now reboot the board, and you should be able to run commands such as
+\noindent Now reboot the board, and you should be able to run commands such as
 \texttt{config-pin\ -q\ P8.45} (to query the status of a pin) without trouble.
 
 \hypertarget{install-pruss-driver-library-prussdrv-and-pru-assembler-pasm}{%
@@ -356,7 +359,7 @@ details. They have 6 pins :
 
 The BeagleBone Black already has pins for GND and VDD, we connect them directly to the corresponding pins on the microphones.
 
-The CLK signal is generated using one of the BeagleBone's internal PWM which is output to one of the board's pins and is configured by a bash script to generate an appropriate CLK signal for the microphones. In our implementation, the PRU's also need to be able to poll the state of the CLK signal. In order to achieve this, the PWM (CLK) signal is also connected to some of the BeagleBone's pins, which are multiplexed to the PRU.
+The CLK signal is generated using one of the BeagleBone's internal PWM which is output to one of the board's pins and is configured by a bash script to generate an appropriate CLK signal for the microphones. In our implementation, the PRUs also need to be able to poll the state of the CLK signal. In order to achieve this, the PWM (CLK) signal is also connected to some of the BeagleBone's pins, which are multiplexed to the PRU.
 
 The DATA pin of the microphone is then connected to a pin of the board which is multiplexed to the PRU.
 
@@ -366,9 +369,9 @@ The DATA pin of the microphone is then connected to a pin of the board which is 
 \caption{Wiring of one microphone to the board}
 \end{figure}
 
-Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones per board's pin. To achieve this, we set one of the SELECT lines of the microphones to 2 different values. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid a short circuit between the 2 microphones connected to the same pin, it is necessary to place a resistor between each microphone and the pin.
+Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones per board's pin. To achieve this, we set one of the SELECT lines of the microphones to 2 different values. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid a short circuit between the 2 microphones connected to the same pin, it is necessary to place a resistor between one of the microphones (for example, between all rising edge microphones) and the BeagleBone Black pin.
 
-Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for \texttt{t\_dv} twice instead of only once with the 'simple' solution using 6 pins. This is because in this case, to retrieve data from all microphones, we have to wait for the rising edge and the falling edge of the clock. According to the microphone's datasheet, \texttt{t\_dv} can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Octopus board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
+Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for \texttt{t\_dv} twice instead of only once with the `simple' solution using 6 pins. This is because in this case, to retrieve data from all microphones, we have to wait for \texttt{t\_dv} after the rising edge \emph{and} after the falling edge of the clock. According to the microphone's datasheet, \texttt{t\_dv} can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Octopus board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
 
 \begin{figure}[h]
 \centering
@@ -391,7 +394,7 @@ chain}\label{overview-of-the-whole-processing-chain}}
 \hypertarget{core-processing-code}{%
 \section{Core processing code}\label{core-processing-code}}
 
-The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory (where a fixed size buffer has been allocated by \texttt{prussdrv}) and interrupting the host whenever data is ready to be retrieved by the host from its buffer. It is written exclusively in PRU assembly (\texttt{pru1.asm} in the project files). The CIC filter parameters chosen were \texttt{N = 4}, \texttt{M = 1} and \texttt{R = 16}.
+The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory (where a fixed size buffer has been allocated by \texttt{prussdrv}) and interrupting the host whenever data is ready to be retrieved by the host from its buffer. It is written exclusively in PRU assembly (\texttt{pru1.asm} in the project files). The CIC filter parameters chosen were \texttt{N~=~4}, \texttt{M = 1} and \texttt{R = 16}.
 
 For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpads as well. It does so by exchanging some of its registers with the scratchpads using the XIN and XOUT instructions. We have to keep track of several different counters along the way, and also do the correct register exchanges with the scratchpads to keep any data from being overwritten. The counters are needed for implementing the decimator, waiting for \texttt{t\_dv} and keeping track of how many samples have been written to the host's memory, so that it can be interrupted when some data is ready.
 
@@ -418,7 +421,7 @@ of the clock. The processing is done in several steps :
     \begin{itemize}
     \tightlist
     \item
-      If the oversampling counter reached R, execute the comb stages and
+      If the downsampling counter reached R, execute the comb stages and
       store chan 1, 2 outputs in registers.
     \end{itemize}
   \item
@@ -431,7 +434,7 @@ of the clock. The processing is done in several steps :
     \begin{itemize}
     \tightlist
     \item
-      If the oversampling counter reached R, execute the comb stages and
+      If the downsampling counter reached R, execute the comb stages and
       store chan 3 output in a register.
     \end{itemize}
   \item
@@ -456,7 +459,7 @@ of the clock. The processing is done in several steps :
     \begin{itemize}
     \tightlist
     \item
-      If the oversampling counter reached R, execute the comb stages and
+      If the downsampling counter reached R, execute the comb stages and
       store chan 4, 5 outputs in registers.
     \end{itemize}
   \item
@@ -470,7 +473,7 @@ of the clock. The processing is done in several steps :
     \begin{itemize}
     \tightlist
     \item
-      If the oversampling counter reached R, execute the comb stages and
+      If the downsampling counter reached R, execute the comb stages and
       store chan 6 output in a register.
     \end{itemize}
   \item
@@ -493,6 +496,7 @@ In order to allow the host to retrieve all the samples before the PRU overwrites
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PRU_timing_diagram_mic_multiplexing.png}
 \caption{Timing diagram of the processing times with mic multiplexing}
+\label{fig:multiplex-mics}
 \end{figure}
 
 \begin{figure}[h]
@@ -500,10 +504,11 @@ In order to allow the host to retrieve all the samples before the PRU overwrites
 \includegraphics[width=1.0\linewidth]{Pictures/PRU_timing_diagram_no_mic_multiplexing.png}
 \caption{Timing diagram of the processing times without mic
 multiplexing}
+\label{fig:nonmultiplex-mics}
 \end{figure}
 
 As mentioned above, multiplexing 2 microphones on 1 input pin reduces
-the available processing time, as can be seen on the diagrams above.
+the available processing time, as can be seen from Figures~\ref{fig:multiplex-mics} and ~\ref{fig:nonmultiplex-mics}.
 
 \begin{figure}
 \centering
@@ -514,7 +519,7 @@ interruptions}
 
 Reading the microphones' data is achieved by reading bits of the R31 register, which is connected to the PRU's input pins, to which the microphones' DATA lines are connected. Since we connected the microphones' clock to one of the input pins of the PRU as well, reading its state is done the same way. In order to know when to read the data, the PRU polls the CLK signal until it detects an edge. It then waits for 25 cycles (\texttt{t\_dv}) and finally reads the data and stores it in a register.
 
-This register is the first integrator in the CIC filter and all subsequent integrators can be updated. Once this is done, the decimator is implemented by using a counter. The uses that counter to determine whether it is time to update the comb stages or not. Once the comb stages are updated, some of the results of the CIC filter are ready and are written to the host's memory.
+This register is the first integrator in the CIC filter and all subsequent integrators can be updated. Once this is done, the decimator is implemented by using a counter. The decimator uses that counter to determine whether it is time to update the comb stages or not. Once the comb stages are updated, some of the results of the CIC filter are ready and are written to the host's memory.
 
 \hypertarget{usage-of-resources-depending-on-the-cic-filter-parameters-n-m-r-and-on-the-number-of-channels-c}{%
 \subsection{\texorpdfstring{Usage of resources depending on the CIC
@@ -551,7 +556,7 @@ We store all this information on PRU1 the following way :
   \textbf{r28} : written bytes counter
 \end{itemize}
 
-The remaining registers are used for storing channel private data. In order to figure out how many registers we need for this, assuming one register is wide enough to hold the expected values (see the formula above to check the required bit width), we can use the following formula \texttt{(M = 1)} :
+The remaining registers are used for storing channel private data. In order to figure out how many registers we need for this, assuming one register is wide enough to hold the expected values (see Equation~\ref{eq:bout} above to check the required bit width), we can use the following formula \texttt{(M = 1)} :
 
 \begin{verbatim}
 n_reg_private = C * (N + 1 + N - 1 + N - 1) = C * (3N - 1)
