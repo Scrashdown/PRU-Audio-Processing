@@ -40,7 +40,7 @@ int main(void) {
     }
 
     struct timespec delay = { 0, 250000000 };  // Wait 250 ms
-    const size_t limit = 50;
+    const size_t limit = 35;
     enable_recording();
         nanosleep(&delay, NULL);
         for (size_t i = 0; i < limit; ++i) {
