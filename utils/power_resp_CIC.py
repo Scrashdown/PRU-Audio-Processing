@@ -26,9 +26,9 @@ def bit_width(N, M, R):
 
 if __name__ == "__main__":
 
-    N = 5
+    N = 4
     M = 1
-    R = 64
+    R = 16
     fs = 64 * 16e3
     P, P_est, freqs_hz = P_hat(N,M,R,fs)
     B = bit_width(N, M, R)
