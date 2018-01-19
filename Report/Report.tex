@@ -858,8 +858,7 @@ An improvement could be to let the user choose how many channels he intends to u
 
 As explained earlier, the current implementation of the interface uses a very simple circular buffer we implemented ourselves, and concurrent accesses are managed using a mutex. This is probably a quite inefficient and unoptimized solution that could lead the interface back-end to miss the recovery of some of the samples from the PRU, if the \texttt{pcm\_read} function is asked to retrieve a huge chunk of data.
 
-A workaround to this would be to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the \texttt{liblfds} library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer). The library can be checked here : 
-\url{https://liblfds.org/}.
+A workaround to this would be to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the \texttt{liblfds}\footnote{\url{https://liblfds.org/}} library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer).
 
 Another idea would be to adapt the interface so that it could directly create a WAV file, and not a raw PCM file.
 
@@ -892,7 +891,7 @@ I would like to also thank the people who were there at the midterm presentation
   \tightlist
   \item
     Hogenauer, Eugene. \emph{"An Economical Class of Digital Filters
-    For Decimation and Interpolation".}
+    For Decimation and Interpolation"} \url{https://www.researchgate.net/publication/3176890_An_economical_class_of_digital_filters_for_decimation_and_interpolation}
   \item
     \url{https://en.wikipedia.org/wiki/Cascaded_integrator%E2%80%93comb_filter}
   \item
@@ -916,7 +915,7 @@ I would like to also thank the people who were there at the midterm presentation
   \item
     \url{http://www.ti.com/lit/wp/spry264a/spry264a.pdf}
   \item
-    http://processors.wiki.ti.com/index.php/PRU\_Linux\_Application\_Loader\_API\_Guide
+    \url{http://processors.wiki.ti.com/index.php/PRU\_Linux\_Application\_Loader\_API\_Guide}
   \end{itemize}
 \item
   Host configuration :
