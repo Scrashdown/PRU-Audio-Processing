@@ -165,13 +165,13 @@ That said, it seems \texttt{uio\_pruss} is currently being phased out of support
 
 For this project, we are using microphones with a 1-bit wide output at a very high sample rate ($ > $~1~MHz). This type of signal is known as a PDM (Pulse Density Modulation) signal and needs to be converted to a lower-rate PCM (Pulse-Code Modulation) signal, which is much more commonly used for processing and storing audio data.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.7\linewidth]{Pictures/PCM.png}
 \caption{Illustration of a PCM signal (CC BY-SA 3.0, \url{https://commons.wikimedia.org/w/index.php?curid=635225)}}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PDM.png}
 \caption{Illustration of a PDM}
@@ -198,7 +198,7 @@ In general, CIC filters are well suited as an efficient first filtering step, wh
 
 Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is \texttt{f\_s}, the output sample rate will be \texttt{f\_s / R}. A CIC interpolation filter is very similar, except the comb stages come first, followed by an interpolator of rate R, and finally the integrators.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{Pictures/CIC_structure.png}
 \caption{Structure of a CIC decimation filter}
@@ -236,13 +236,13 @@ Black, an SD card, and the Kurodako Board. Flash the board with the
 latest ``IoT" Debian image following these
 \href{https://beagleboard.org/getting-started}{instructions}\footnote{\url{https://beagleboard.org/getting-started}}.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{Pictures/BBB.jpg}
 \caption{The BeagleBone Black, with an SD card}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.4\linewidth]{Pictures/kurodako.jpg}
 \caption{The Kurodako Board, although the program only supports 6
@@ -378,7 +378,7 @@ write it to a file called \texttt{main.c} in \texttt{host/}, then run
 \section{Microphones and wiring
 diagram}\label{microphones-and-wiring-diagram}}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.6\linewidth]{Pictures/mics.png}
 \caption{Knowles SPM1437HM4H-B microphones}
@@ -396,18 +396,18 @@ details. They have 6 pins :
 \item
   \textbf{VDD} (power) : VDD.
 \item
-  \textbf{CLOCK} (input) : The clock input. Must be at a frequency
+  \textbf{CLK} (input) : The clock input. Must be at a frequency
   \textgreater{} 1 MHz to wake up the microphone. Dictates the
   microphone's sample rate, \texttt{f\_s\ =\ f\_clk}.
 \item
   \textbf{DATA} (output) : The microphone's PDM output. Its sample rate
-  equals the period of the CLOCK signal. The DATA signal is ready shortly
+  equals the period of the CLK signal. The DATA signal is ready shortly
   after the rising or falling edge of the CLK. This delay is variable,
   but is between 18 ns and 125 ns. It is designated in the microphone documentation
   as \texttt{t\_dv}.
 \item
   \textbf{SELECT} (input) : Selects whether data is ready after rising
-  or falling edge of CLOCK, (VDD =\textgreater{} rising, GND
+  or falling edge of CLK, (VDD =\textgreater{} rising, GND
   =\textgreater{} falling).
 \end{itemize}
 
@@ -417,7 +417,7 @@ The CLK signal is generated using one of the BeagleBone's internal PWM which is 
 
 The DATA pin of the microphone is then connected to a pin of the board which is multiplexed to the PRU.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.6\linewidth]{Pictures/wiring.png}
 \caption{Wiring of one microphone to the board}
@@ -425,9 +425,9 @@ The DATA pin of the microphone is then connected to a pin of the board which is 
 
 Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones to a single board pin, thus tying two DATA lines together. To achieve this, we set one of the SELECT lines of the microphones to VDD and the other to GND. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid a short circuit between the 2 microphones connected to the same pin, it is necessary to place a resistor between one of the microphones (for example, between all rising edge microphones) and the BeagleBone Black pin. This method has the advantage of using 3 pins on the BBB instead of 6.
 
-Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for \texttt{t\_dv} twice instead of only once with the `simple' solution using 6 pins. This is because in this case, to retrieve data from all microphones, we have to wait for \texttt{t\_dv} after the rising edge \emph{and} after the falling edge of the clock. According to the microphone's datasheet, \texttt{t\_dv} can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Kurodako board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
+Doing this has a drawback however, for each round of processing (processing all the channels) we need to wait for \texttt{t\_dv} twice instead of only once with the `simple' solution using 6 pins. This is because in this case, to retrieve data from all microphones, we have to wait for \texttt{t\_dv} after the rising edge \emph{and} after the falling edge of the clock. According to the microphone's datasheet \footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20Acoustics\%20PDFs/SPM1437HM4H-B.pdf}}, \texttt{t\_dv} can go up to 125 ns, which is 25 cycles of the PRU at its 200 MHz clock rate. Although not a huge advantage in performance it is still significant. However, the current Kurodako board uses the 3 pins for 6 microphones, so we have to deal with this drawback.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.6\linewidth]{Pictures/timing_diagram.png}
 \caption{Timing diagram of the microphones}
@@ -448,12 +448,23 @@ chain}\label{overview-of-the-whole-processing-chain}}
 \hypertarget{core-processing-code}{%
 \section{Core processing code}\label{core-processing-code}}
 
-The core audio processing code, which implements the CIC filter, is running on the PRU and handles the tasks of reading the data from the microphones in time, processing all the channels, writing the results directly into the host's memory (where a fixed size buffer has been allocated by \texttt{prussdrv}) and interrupting the host whenever data is ready to be retrieved by the host from its buffer. It is written exclusively in PRU assembly (\texttt{pru1.asm} in the project files). The chosen CIC filter parameters are \texttt{N~=~4}, \texttt{M = 1} and \texttt{R = 16}.
+The core audio processing code, which implements the CIC filter, runs on the PRU and handles the following tasks :
 
-For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpads as well. It does so by exchanging some of its registers with the scratchpads using the XIN and XOUT instructions. We have to keep track of several different counters along the way, and also do the correct register exchanges with the scratchpads to keep any data from being overwritten. The counters are needed for implementing the decimator, waiting for \texttt{t\_dv} and keeping track of how many samples have been written to the host's memory, so that it can be interrupted when the expected amount of data is ready.
+\begin{itemize}
+\tightlist
+\item
+  Reading the data from the microphones in time. Since we are using the Kurodako board, we have to read data at every edge of the clock. Must be done thrice after the rising edge, and thrice after the falling edge, by reading the corresponding pins through the r31 register.
+\item
+  Processing all the channels. This means updating all the stages of the filter to get the output data for each channel.
+\item
+  Writing the results (output data) directly into the host's memory (where a fixed size buffer has been allocated by \texttt{prussdrv}).
+\item
+  Interrupting the host when data is ready to be retrieved by the host from its buffer.
+\end{itemize}
 
-Since we are using the Kurodako board, we have to read data at every edge
-of the clock. The processing is done in several steps :
+It is written exclusively in PRU assembly (\texttt{pru1.asm} in the project files). The chosen CIC filter parameters are \texttt{N~=~4}, \texttt{M = 1} and \texttt{R = 16}.
+
+For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpads as well. It does so by exchanging some of its registers with the scratchpads using the XIN and XOUT instructions. We have to keep track of several different counters along the way, and also do the correct register exchanges with the scratchpads to keep any data from being overwritten. We need one counter to implement the decimator, one for the \texttt{t\_dv} delay and one to keep track of how many samples have been written to the host's memory, so that it can be interrupted when the expected amount of data is ready. The processing is done in several steps :
 
 \begin{itemize}
 \tightlist
@@ -498,7 +509,7 @@ of the clock. The processing is done in several steps :
   \end{itemize}
 \item
    Read data from channels 4-6, process it and output the results to the
-   host buffer. . Details :
+   host buffer. Details :
 
   \begin{itemize}
   \tightlist
@@ -547,14 +558,14 @@ of the clock. The processing is done in several steps :
 
 In order to allow the host to retrieve all the samples before the PRU overwrites them with new data, we have the PRU trigger an interrupt whenever it reaches the middle of the buffer, or the end. These interrupts have different codes which allows the host to tell which half of the buffer contains fresh data. This way, the host can be sure to read one half of the buffer while the other half is being overwritten by the PRU.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PRU_timing_diagram_mic_multiplexing.png}
 \caption{Timing diagram of the processing times with mic multiplexing}
 \label{fig:multiplex-mics}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PRU_timing_diagram_no_mic_multiplexing.png}
 \caption{Timing diagram of the processing times without mic
@@ -773,7 +784,7 @@ We have noticed that some occasional glitches appeared in the signal while using
 
 More rigorous testing needs to be done to make sure the PRU processing code and the interface work as intended.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{Pictures/glitches_circled.png}
 \caption{Glitches in the signal while recording for about 4m15s}
@@ -800,7 +811,7 @@ This `shortage' of registers on the PRU forced us to write each set of 6 samples
 
 Another challenge was to design the program such that it would not rely on the host too much because of its unpredictable timings and busy nature. Below is an example of a bug that happened when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) spectrogram.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/timing_bug.png}
 \caption{Spectrogram of a signal missing samples as a result of timing
