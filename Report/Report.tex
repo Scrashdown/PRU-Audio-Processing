@@ -464,7 +464,7 @@ The core audio processing code, which implements the CIC filter, runs on the PRU
 
 It is written exclusively in PRU assembly (\texttt{pru1.asm} in the project files). The chosen CIC filter parameters are \texttt{N~=~4}, \texttt{M = 1} and \texttt{R = 16}.
 
-For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpads as well. It does so by exchanging some of its registers with the scratchpads using the XIN and XOUT instructions. We have to keep track of several different counters along the way, and also do the correct register exchanges with the scratchpads to keep any data from being overwritten. We need one counter to implement the decimator, one for the \texttt{t\_dv} delay and one to keep track of how many samples have been written to the host's memory, so that it can be interrupted when the expected amount of data is ready. The processing is done in several steps :
+For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpads as well. It does so by exchanging some of its registers with the scratchpads using the \texttt{XIN} and \texttt{XOUT} instructions. We have to keep track of several different counters along the way, and also do the correct register exchanges with the scratchpads to keep any data from being overwritten. We need one counter to implement the decimator, one for the \texttt{t\_dv} delay and one to keep track of how many samples have been written to the host's memory, so that it can be interrupted when the expected amount of data is ready. The processing is done in several steps :
 
 \begin{itemize}
 \tightlist
@@ -675,9 +675,9 @@ enough)}{Total number of registers required given N and C (M = 1) (assuming bit 
 
 
 An important thing to note is that the PRU is supposed to support the
-XCHG instruction, which exchanges registers from the PRU to one of the
-banks in one cycle. Unfortunately, it does not work. Only the XIN and
-XOUT instructions currently work. This means that we always need to keep
+\texttt{XCHG} instruction, which exchanges registers from the PRU to one of the
+banks in one cycle. Unfortunately, it does not work. Only the \texttt{XIN} and
+\texttt{XOUT} instructions currently work. This means that we always need to keep
 \texttt{n\_reg\_private} (11) registers free to act as a temporary
 storage place. The PRU's registers handle this task.
 
@@ -770,6 +770,12 @@ It is important to note that there will be concurrent accesses to the circular b
 implementation}\label{single-channel-implementation}}
 
 The single channel implementation works and shows that it is possible to implement a CIC filter on the PRU and rely on PRU writes to the host memory. With the following parameters (N = 4, M = 1, R = 16), we were able to get a moderately noisy but intelligible signal at a sample rate of 64 kHz.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{Pictures/spectrogram.png}
+\caption{Spectrogram of the signal of one of the channels from the demo recording made during the project's presentation.}
+\end{figure}
 
 It is worth noting that using one channel, the timing constraints are much less tight since there is much less processing to be done. This leaves more freedom in choosing the parameters. For example, higher input sample rates (compared to the 6-channel 1.028 MHz) are achievable.
 
