@@ -74,39 +74,8 @@
 \providecommand{\tightlist}{%
 	\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
-%\title{Audio processing on the BeagleBone Black's Programmable Real-time Unit}
-%\author{Loïc Droz}
-%\date{Bachelor Semester Project - Fall 2017}
-
-
-%\usepackage{titling}
-%\pretitle{%
-%	\begin{center}
-%		\LARGE
-%		\includegraphics[width=0.5\linewidth]{Pictures/epfl}\\
-%		[\bigskipamount]
-%	}
-%\posttitle{
-%	\end{center}}
 
 \begin{document}
-
-%\maketitle
-
-%\begin{titlepage}
-%	\centering
-%	\vfill
-%	{\bfseries\Large
-%		Audio processing on the BeagleBone Black's Programmable Real-time Unit\\
-%		Bachelor Semester Project - Fall 2017 \\
-%		\vskip2cm
-%		Loïc Droz\\
-%	}    
-%	\vfill
-%	\includegraphics[width=0.5\linewidth]{Pictures/epfl}
-%	\vfill
-%	\vfill
-%\end{titlepage}
 
 
 \begin{titlepage}
@@ -134,7 +103,7 @@
 \hypertarget{introduction-motivation}{%
 \chapter{Introduction / Motivation}\label{introduction-motivation}}
 
-The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to allow convenient access through a simple C~library. The input signals come from 6 Knowles SPM1437HM4H-B microphones\footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20Acoustics\%20PDFs/SPM1437HM4H-B.pdf}} connected to the board via a cape designed especially for this project.
+The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to allow convenient access through a simple C~library. The input signals come from 6 Knowles SPM1437HM4H-B microphones\footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20Acoustics\%20PDFs/SPM1437HM4H-B.pdf}} connected to the board via a cape designed especially for this project.\footnote{\url{https://github.com/fakufaku/kurodako}}
 
 The audio processing code currently handles the six microphones at a fixed output sample rate, using one of the 2 PRUs present on the board. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of the data on the API side in order to prevent overflows in case the user wants to momentarily stop reading data.
 
@@ -238,8 +207,7 @@ required bit width for all stages of the filter.
 
 First of all, make sure you have the required hardware: the BeagleBone
 Black, an SD card, and the Kurodako Board. Flash the board with the
-latest ``IoT" Debian image following these
-\href{https://beagleboard.org/getting-started}{instructions}\footnote{\url{https://beagleboard.org/getting-started}}.
+latest ``IoT" Debian image following these instructions\footnote{\url{https://beagleboard.org/getting-started}}.
 
 \begin{figure}[H]
 \centering
@@ -260,11 +228,6 @@ channels for now, it has 8 mics.}
 \caption{The BBB with the Kurodako Board, ready to be used!}
 \end{figure}
 
-%\hypertarget{configure-uio\_pruss-and-free-the-gpio-pins-for-the-pru}{%
-%\subsection{\texorpdfstring{Configure \texttt{uio\_pruss} and free
-%the BBB GPIO pins for the
-%PRU}{Configure uio\_pruss and free the BBB GPIO pins for the PRU}}\label{configure-uio\_pruss-and-free-the-gpio-pins-for-the-pru}}
-
 \hypertarget{configure-uio-pruss-and-free-the-gpio-pins-for-the-pru}{%
 	\subsection{\texorpdfstring{Configure \texttt{uio\_pruss} and free
 			the BBB GPIO pins for the
@@ -274,10 +237,8 @@ channels for now, it has 8 mics.}
 \texttt{Linux beaglebone\ 4.4.91-ti-r133\ \#1\ SMP\ Tue\ Oct\ 10\ 05:18:08\ UTC\ 2017\ armv7l\ GNU/Linux}
 
 In order to run the filter, we need to be able to use the input and
-output pins from the PRUs so that it is possible to read data from the microphones.
-Some of them can be multiplexed to the PRUs. However, by default, some
-pins cannot be reassigned to anything else. To correct this, we need to
-load a \href{https://elinux.org/Capemgr}{cape}\footnote{\url{https://elinux.org/Capemgr}}. To do so, open the
+output pins from the PRUs so that it is possible to read data from the microphones. The PRU's I/O pins can be connected to the BBB's GPIO pins.\footnote{Image of the BBB's GPIO pins : \url{http://beagleboard.org/static/images/cape-headers.png}}\footnote{P8 Header Table: \url{https://itbrainpower.net/a-gsm/images/BeagleboneBlackP8HeaderTable.pdf}}\footnote{P9 Header Table: \url{https://itbrainpower.net/a-gsm/images/BeagleboneBlackP9HeaderTable.pdf}} However, by default, some BBB pins cannot be reassigned to anything else. To correct this, we need to
+load a \href{https://elinux.org/Capemgr}{cape}.\footnote{\url{https://elinux.org/Capemgr}} To do so, open the
 \texttt{/boot/uEnv.txt} file on the board (backup it first!)~and do the
 following modifications, then reboot :\\
 
@@ -294,7 +255,7 @@ enable_uboot_cape_universal=1
 \end{verbatim}
 
 You should now be able to multiplex a pin to the PRUs using the
-\texttt{config-pin} command (see these diagrams for more information on which pins can be multiplexed to the PRUs\footnote{Cape headers: \url{http://beagleboard.org/static/images/cape-headers.png}}\footnote{P8 Header Table: \url{https://itbrainpower.net/a-gsm/images/BeagleboneBlackP8HeaderTable.pdf}}\footnote{P9 Header Table: \url{https://itbrainpower.net/a-gsm/images/BeagleboneBlackP9HeaderTable.pdf}}). We still
+\texttt{config-pin} command. We still
 have to enable the UIO driver, which is disabled in favor of
 \texttt{pru\_rproc} on this kernel. To do so, still in the
 \texttt{/boot/uEnv.txt} file, comment the following line :
@@ -389,8 +350,7 @@ diagram}\label{microphones-and-wiring-diagram}}
 \end{figure}
 
 For this project, we are using the Knowles SPM1437HM4H-B microphones
-which output a PDM signal at a very high frequency (\textgreater{} 1
-MHz), see the microphone's datasheet for more
+which output a PDM signal at a very high frequency (\textgreater{} 1~MHz), see the microphone's datasheet for more
 details.\footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20Acoustics\%20PDFs/SPM1437HM4H-B.pdf}} They have 6 pins:
 
 \begin{itemize}
@@ -400,14 +360,14 @@ details.\footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20A
 \item
   \textbf{VDD} (power) : VDD.
 \item
-  \textbf{CLK} (input) : The clock input. Must be at a frequency
+  \textbf{CLK} (input) : The clock input, must be at a frequency
   \textgreater{} 1 MHz to wake up the microphone. Dictates the
   microphone's sample rate, \texttt{f\_s\ =\ f\_clk}.
 \item
   \textbf{DATA} (output) : The microphone's PDM output. Its sample rate
   equals the period of the CLK signal. The DATA signal is ready shortly
   after the rising or falling edge of the CLK. This delay is variable,
-  but is between 18 ns and 125 ns. It is designated in the microphone documentation
+  but is between 18 ns and 125 ns. It is designated in the microphone's datasheet
   as \texttt{t\_dv}.
 \item
   \textbf{SELECT} (input) : Selects whether data is ready after rising
@@ -448,6 +408,22 @@ chain}\label{overview-of-the-whole-processing-chain}}
 \includegraphics[width=1.0\linewidth]{Pictures/PRU_processing_chain.png}
 \caption{Overview of the whole processing chain}
 \end{figure}
+
+The complete processing chain is made of several elements :
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{The array of microphones} : Each microphone generates a 1.028 MHz PDM signal sent to PRU1.
+\item
+  \textbf{PRU1} : Converts the PDM signals to lower-rate, 64 kHz PCM signals with a separate CIC filter for each microphone, and outputs the data directly into the first host's buffer.
+\item
+  \textbf{1st host buffer} : The buffer to which PRU1 directly writes data of the PCM signals. It is allocated by the \texttt{prussdrv} library. Samples in this buffer are regularly transferred by the host interface to the host's second buffer.
+\item
+  \textbf{2nd host buffer} : A circular buffer, bigger than the first one. When the \texttt{pcm\_read} function of the interface is called, the number of samples requested by the user are popped from this buffer, and only the data from the channels chosen by the user is written to the user-provided buffer.
+\item
+  \textbf{User-provided buffer} : A buffer allocated by the user of the interface. Must be large enough to hold the amount of data requested by the user.
+\end{itemize}
 
 \hypertarget{core-processing-code}{%
 \section{Core processing code}\label{core-processing-code}}
@@ -520,7 +496,7 @@ For performance reasons, the PRU uses registers to store the data of each stage 
   \item
     Load chan. 4, 5 registers from BANK1 and BANK2.
   \item
-    Wait for rising edge, then wait for chan. 4, 5 data.
+    Wait for falling edge, then wait for chan. 4, 5 data.
   \item
     Read chan. 4, 5 input data.
   \item
@@ -652,7 +628,7 @@ Note that different parameters may allow for fitting more than one
 channel in a single register,\footnote{if \texttt{B\textunderscore out} from Eq.~\ref{eq:bout} is $ \leq 16 $.} which would change the above formula and
 dramatically reduce the amount of registers needed.
 
-
+We chose to keep \texttt{M = 1} because a greater value of \texttt{M} would increase the required number of registers by a significant amount. Furthermore, it is said in most documentation about CIC filters that keeping \texttt{M} to 1 or 2 suffices to provide a decent frequency response.
 
 
 \hypertarget{total-number-of-registers-required-given-n-and-c-m-1-assuming-bit-width-of-32-is-enough}{%
@@ -676,7 +652,6 @@ enough)}{Total number of registers required given N and C (M = 1) (assuming bit 
 \end{tabular} 
 \end{center}
 \end {table}
-
 
 An important thing to note is that the PRU is supposed to support the
 \texttt{XCHG} instruction, which exchanges registers from the PRU to one of the
@@ -856,7 +831,7 @@ interface}\label{better-and-more-modular-interface}}
 
 For now the interface is very limited, and depending on how many channels the user chooses to read, the whole program can also be very wasteful on resources. This is because with the current implementation, the PRU always processes the six channels, and the host interface's backend always records all six channels, even if in the end the user requests fewer channels. In the event the user wants to read fewer channels, the interface's front-end will just drop the data from the channels the user does not want, before sending the data to the user.
 
-An improvement could be to let the user choose how many channels he intends to use at most, and then only handle this number of channels instead of the maximum possible. However, making the CIC filter's code modular might not be a feasible task given the high performance requirements, at least with the current model of our implementation. A workaround would be to write several programs, possibly one for each number of channels.
+An improvement could be to let the user choose how many channels he intends to use at most, and then only handle this number of channels instead of the maximum possible. However, making the CIC filter's code modular might not be a feasible task given the high performance requirements, at least with the current model of our implementation. A workaround would be to write several programs, possibly one for each number of channels, and load the appropriate one on the PRU by letting the user choose the number of channels when calling the \texttt{pru\_processing\_init} function is called.
 
 As explained earlier, the current implementation of the interface uses a very simple circular buffer we implemented ourselves, and concurrent accesses are managed using a mutex. This is probably a quite inefficient and unoptimized solution that could lead the interface back-end to miss the recovery of some of the samples from the PRU, if the \texttt{pcm\_read} function is asked to retrieve a huge chunk of data.
 
