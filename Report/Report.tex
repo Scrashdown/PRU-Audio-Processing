@@ -173,13 +173,13 @@ For this project, we are using microphones with a 1-bit wide output at a very hi
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\linewidth]{Pictures/PCM.png}
-\caption{Illustration of a PCM signal (CC BY-SA 3.0, \url{https://commons.wikimedia.org/w/index.php?curid=635225)}}
+\caption{Illustration of a PCM signal (CC BY-SA 3.0, \url{https://commons.wikimedia.org/w/index.php?curid=635225})}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PDM.png}
-\caption{Illustration of a PDM}
+\caption{Illustration of a PDM signal (\url{https://commons.wikimedia.org/wiki/File:Pulse-density_modulation_1_period.gif})}
 \end{figure}
 
 In a PCM signal, each value represents its amplitude on a fixed scale at a fixed time. However, in a PDM signal, its amplitude at a given time is represented by the density of 1's relative to 0's at a given time. Converting a PDM signal to a PCM signal therefore requires using some form of a moving-average filter.
@@ -198,7 +198,7 @@ In general, CIC filters are well suited as an efficient first filtering step, wh
 \begin{figure}
 \centering
 \includegraphics[width=0.9\linewidth]{Pictures/CIC_power_resp.png}
-\caption{Example power response of the filter}
+\caption{Example power response of the filter, own work}
 \end{figure}
 
 Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is \texttt{f\_s}, the output sample rate will be \texttt{f\_s / R}. A CIC interpolation filter is very similar, except the comb stages come first, followed by an interpolator of rate R, and finally the integrators.
@@ -206,7 +206,7 @@ Now let's dive into more detail about the CIC filter. The filter has 3 parameter
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{Pictures/CIC_structure.png}
-\caption{Structure of a CIC decimation filter}
+\caption{Structure of a CIC decimation filter, obtained from Hogenhauer's paper about CIC filters}
 \end{figure}
 
 The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. More detailed explanation will follow in the implementation section of this report - Section~\ref{implementation}. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
@@ -243,20 +243,20 @@ latest ``IoT" Debian image following these instructions\footnote{\url{https://be
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{Pictures/BBB.jpg}
-\caption{The BeagleBone Black, with an SD card}
+\caption{The BeagleBone Black, with an SD card (own work)}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.4\linewidth]{Pictures/kurodako.jpg}
 \caption{The Kurodako Board, although the program only supports 6
-channels for now, it has 8 mics.}
+channels for now, it has 8 mics. (own work)}
 \end{figure}
 
 \begin{figure}
 \centering
 \includegraphics[width=0.4\linewidth]{Pictures/BBBkurodako.jpg}
-\caption{The BBB with the Kurodako Board, ready to be used!}
+\caption{The BBB with the Kurodako Board, ready to be used! (own work)}
 \end{figure}
 
 %\hypertarget{configure-uio\_pruss-and-free-the-gpio-pins-for-the-pru}{%
@@ -384,7 +384,7 @@ diagram}\label{microphones-and-wiring-diagram}}
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.6\linewidth]{Pictures/mics.png}
-\caption{Knowles SPM1437HM4H-B microphones}
+\caption{Knowles SPM1437HM4H-B microphones, obtained from the datasheet}
 \end{figure}
 
 For this project, we are using the Knowles SPM1437HM4H-B microphones
@@ -423,7 +423,7 @@ The DATA pin of the microphone is then connected to a pin of the board which is 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.6\linewidth]{Pictures/wiring.png}
-\caption{Wiring of one microphone to the board}
+\caption{Wiring of one microphone to the board (own work)}
 \end{figure}
 
 Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones to a single board pin, thus tying two DATA lines together. To achieve this, we set one of the SELECT lines of the microphones to VDD and the other to GND. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid a short circuit between the 2 microphones connected to the same pin, it is necessary to place a resistor between one of the microphones (for example, between all rising edge microphones) and the BeagleBone Black pin. This method has the advantage of using 3 pins on the BBB instead of 6.
@@ -433,7 +433,7 @@ Doing this has a drawback however, for each round of processing (processing all 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.6\linewidth]{Pictures/timing_diagram.png}
-\caption{Timing diagram of the microphones}
+\caption{Timing diagram of the microphones, obtained from the datasheet}
 \end{figure}
 
 %\newpage
@@ -445,7 +445,7 @@ chain}\label{overview-of-the-whole-processing-chain}}
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PRU_processing_chain.png}
-\caption{Overview of the whole processing chain}
+\caption{Overview of the whole processing chain (own work)}
 \end{figure}
 
 The complete processing chain is made of several elements :
@@ -580,7 +580,7 @@ In order to allow the host to retrieve all the samples before the PRU overwrites
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PRU_timing_diagram_mic_multiplexing.png}
-\caption{Timing diagram of the processing times with mic multiplexing}
+\caption{Timing diagram of the processing times with mic multiplexing (own work)}
 \label{fig:multiplex-mics}
 \end{figure}
 
@@ -588,7 +588,7 @@ In order to allow the host to retrieve all the samples before the PRU overwrites
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PRU_timing_diagram_no_mic_multiplexing.png}
 \caption{Timing diagram of the processing times without mic
-multiplexing}
+multiplexing (own work)}
 \label{fig:nonmultiplex-mics}
 \end{figure}
 
@@ -599,7 +599,7 @@ the available processing time, as can be seen from Figures~\ref{fig:multiplex-mi
 \centering
 \includegraphics[width=0.8\linewidth]{Pictures/PRU_buffer.png}
 \caption{Illustration of the interleaved samples in the buffer, and
-interruptions}
+interruptions (own work)}
 \end{figure}
 
 Reading the microphones' data is achieved by reading bits of the R31 register, which is connected to the PRU's input pins, to which the microphones' DATA lines are connected. Since we connected the microphones' clock to one of the input pins of the PRU as well, reading its state is done the same way. In order to know when to read the data, the PRU polls the CLK signal until it detects an edge. It then waits for 25 cycles (\texttt{t\_dv}) and finally reads the data and stores it in a register.
@@ -793,7 +793,7 @@ The single channel implementation works and shows that it is possible to impleme
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{Pictures/spectrogram.png}
-\caption{Spectrogram of the signal of one of the channels from the demo recording made during the project's presentation.}
+\caption{Spectrogram of the signal of one of the channels from the demo recording made during the project's presentation (own work).}
 \end{figure}
 
 It is worth noting that using one channel, the timing constraints are much less tight since there is much less processing to be done. This leaves more freedom in choosing the parameters. For example, higher input sample rates (compared to the 6-channel 1.028 MHz) are achievable.
@@ -812,7 +812,7 @@ More rigorous testing needs to be done to make sure the PRU processing code and 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{Pictures/glitches_circled.png}
-\caption{Glitches in the signal while recording for about 4m15s}
+\caption{Glitches in the signal while recording for about 4m15s (own work)}
 \end{figure}
 
 \hypertarget{challenges-faced}{%
@@ -840,7 +840,7 @@ Another challenge was to design the program such that it would not rely on the h
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/timing_bug.png}
 \caption{Spectrogram of a signal missing samples as a result of timing
-issues.}
+issues (own work).}
 \end{figure}
 
 \hypertarget{possible-improvements-and-additional-features}{%
