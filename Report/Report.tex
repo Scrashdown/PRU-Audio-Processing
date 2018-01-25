@@ -142,21 +142,13 @@ The SPM1437HM4H-B microphones used for this project produce a \emph{PDM} (Pulse 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\linewidth]{Pictures/PCM.png}
-<<<<<<< HEAD
-\caption{Illustration of a PCM signal (CC BY-SA 3.0, \url{https://commons.wikimedia.org/w/index.php?curid=635225})}
-=======
 \caption{Illustration of a PCM signal (CC BY-SA 3.0, \url{https://commons.wikimedia.org/w/index.php?curid=635225)}.}
->>>>>>> f531a903f5ed5d8e7afd11aaa5ccb8cfdf3c46a5
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\linewidth]{Pictures/PDM.png}
-<<<<<<< HEAD
 \caption{Illustration of a PDM signal (\url{https://commons.wikimedia.org/wiki/File:Pulse-density_modulation_1_period.gif})}
-=======
-\caption{Illustration of a PDM signal.}
->>>>>>> f531a903f5ed5d8e7afd11aaa5ccb8cfdf3c46a5
 \end{figure}
 
 In a PCM signal, each value represents its amplitude on a fixed scale at a fixed time. However, in a PDM signal, its amplitude at a given time is represented by the density of 1's relative to 0's at a given time. Converting a PDM signal to a PCM signal therefore requires using some form of a moving-average filter.
@@ -172,15 +164,12 @@ Although cheap to compute, the CIC filter does have an unfortunate drawback. Its
 
 In general, CIC filters are well suited as an efficient first filtering step, which efficiently downsamples the signal and gets rid of some of the higher frequencies. The reduced sample rate of the output reduces the computational power needed for additional FIR compensation filters, and therefore compensates their higher complexity.
 
-<<<<<<< HEAD
 \begin{figure}
 \centering
 \includegraphics[width=0.9\linewidth]{Pictures/CIC_power_resp.png}
-\caption{Example power response of the filter, own work}
+\caption{Example power response of the filter (own work).}
 \end{figure}
 
-=======
->>>>>>> f531a903f5ed5d8e7afd11aaa5ccb8cfdf3c46a5
 Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is \texttt{f\_s}, the output sample rate will be \texttt{f\_s / R}. A CIC interpolation filter is very similar, except the comb stages come first, followed by an interpolator of rate R, and finally the integrators.
 
 \begin{figure}[H]
@@ -191,13 +180,8 @@ Now let's dive into more detail about the CIC filter. The filter has 3 parameter
 
 \begin{figure}[H]
 \centering
-<<<<<<< HEAD
 \includegraphics[width=0.9\linewidth]{Pictures/CIC_structure.png}
-\caption{Structure of a CIC decimation filter, obtained from Hogenhauer's paper about CIC filters}
-=======
-\includegraphics[width=0.7\linewidth]{Pictures/CIC_structure.png}
-\caption{Structure of a CIC decimation filter.}
->>>>>>> f531a903f5ed5d8e7afd11aaa5ccb8cfdf3c46a5
+\caption{Structure of a CIC decimation filter, obtained from Hogenhauer's paper about CIC filters.}
 \end{figure}
 
 The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. A more detailed explanation will follow in the implementation section of this report - Section~\ref{implementation}. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
@@ -234,11 +218,7 @@ latest ``IoT" Debian image following these instructions\footnote{\url{https://be
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{Pictures/BBB.jpg}
-<<<<<<< HEAD
-\caption{The BeagleBone Black, with an SD card (own work)}
-=======
-\caption{The BeagleBone Black, with an SD card.}
->>>>>>> f531a903f5ed5d8e7afd11aaa5ccb8cfdf3c46a5
+\caption{The BeagleBone Black, with an SD card (own work).}
 \end{figure}
 
 \begin{figure}[H]
@@ -411,7 +391,7 @@ The DATA pin of the microphone is then connected to a pin of the board which is 
 \centering
 \includegraphics[width=0.6\linewidth]{Pictures/wiring.png}
 <<<<<<< HEAD
-\caption{Wiring of one microphone to the board (own work)}
+\caption{Wiring of one microphone to the board (own work).}
 =======
 \caption{Wiring of one microphone to the board.}
 >>>>>>> f531a903f5ed5d8e7afd11aaa5ccb8cfdf3c46a5
