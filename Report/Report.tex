@@ -101,20 +101,29 @@
 
 
 \hypertarget{introduction-motivation}{%
-\chapter{Introduction / Motivation}\label{introduction-motivation}}
+\chapter{Introduction}\label{introduction-motivation}}
 
-Microphone arrays have become increasingly popular due to popular devices such as Amazon Echo, Google Home, etc. These devices make use of microphone arrays to perform algorithms such as beamforming and direction-of-arrival. The LCAV lab at EPFL has already developed such algorithms\footnote{LCAV algorithms repository : \url{https://github.com/LCAV/pyroomacoustics}} and a browser-based interface for audio processing with an embedded platform \footnote{\urlhttps://github.com/LCAV/easy-dsp{}} - the BeagleBone Black. The goal of this project is to implement such a microphone array on the BeagleBone Black, taking advantage of a unique microcontroller available on the BeagleBone Black device - the Programmable Real-time Unit SubSystem (PRUSS).
+Microphone arrays have become increasingly popular due to devices such as Amazon Echo, Google Home, etc. These devices make use of microphone arrays to perform algorithms such as beamforming and direction-of-arrival. The LCAV lab at EPFL has already developed such algorithms\footnote{LCAV algorithms repository : \url{https://github.com/LCAV/pyroomacoustics}} and a browser-based interface for audio processing with an embedded platform \footnote{\url{https://github.com/LCAV/easy-dsp}} - the BeagleBone Black (BBB). The goal of this project is to implement such a microphone array on the BBB, taking advantage of a unique microcontroller available on the BBB - the Programmable Real-time Unit SubSystem (PRUSS).
 
-The project is made of 3 main components :
+The project consists of three main components :
 
-\begin{itemize}
+\begin{enumerate}
   \tightlist
-  \item The hardware : the microphone array itself, made of the BeagleBone Black and the Kurodako cape\footnote{\url{}}
-\end{itemize}
+  \item Hardware : the microphone array itself, made of the BBB and the Kurodako cape\footnote{\url{https://github.com/fakufaku/kurodako}}.
+  \item Firmware : the program running on the PRUSS which handles the audio capture and processing.
+  \item Software : a C interface (API), running on the BBB's ARM CPU.
+\end{enumerate}
 
-The audio processing code currently handles the six microphones at a fixed output sample rate, using one of the 2 PRUs present on the board. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of the data on the API side in order to prevent overflows in case the user wants to momentarily stop reading data.
+For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of the data on the API side in order to prevent overflows.
 
-Running the core audio processing code on the PRU instead of the main ARM CPU allows for lower latency due to the PRU's predictable timing and it is not subject to OS-scheduling like a typical Linux process running on the ARM CPU would be. Offloading the ARM CPU from such an intensive task also prevents our library from having a significant impact on the global performance of the host when it is used.
+Running the core audio processing code on the PRUSS instead of the main ARM CPU has three advantages :
+
+\begin{enumerate}
+  \tightlist
+  \item Lower latency due to the PRUSS' predictable timings.
+  \item Any program running on the PRUSS is not subject to OS-scheduling like a typical Linux process running on the ARM CPU.
+  \item Offloading the ARM CPU from such an intensive task also prevents our library from having a significant impact on the global performance of the host when it is used.
+\end{enumerate}
 
 The code and documentation can be found at the link below:
 \begin{center}
@@ -139,12 +148,12 @@ The PRUSS also contains an interrupt controller which allows the PRU to send and
 
 Using the PRUSS requires a driver. Currently, there are 2 choices available : \texttt{uio\_pruss} (along with the \texttt{prussdrv} library) and the newer \texttt{pru\_rproc}. \texttt{uio\_pruss} provides a lower level interface than \texttt{pru\_rproc}. \texttt{pru\_rproc} provides a C library for message passing between the PRU and the ARM CPU which makes programming simpler than with \texttt{uio\_pruss}. However, the current lack of online examples for using \texttt{pru\_rproc}, along with performance issues encountered while investigating it for this project, made us choose \texttt{uio\_pruss} instead.
 
-That said, it seems \texttt{uio\_pruss} is currently being phased out of support by Texas Instruments in favor of \texttt{pru\_rproc}. It may be feasible in the future to convert the code to use \texttt{pru\_rproc}. However, as we are going to see further in the report, the timing requirements in the PRU processing code are very tight, even using assembly. Whether it would be possible to meet them using C and \texttt{pru\_rproc} has yet to be investigated.
+Moreover, it seems \texttt{uio\_pruss} is currently being phased out of support by Texas Instruments in favor of \texttt{pru\_rproc}. It may be feasible in the future to convert the code to use \texttt{pru\_rproc}. However, as we are going to see further in the report, the timing requirements in the PRU processing code are very tight, even using assembly. Whether it would be possible to meet them using C and \texttt{pru\_rproc} has yet to be investigated.
 
 \hypertarget{audio-processing}{%
 \section{Audio Processing}\label{audio-processing}}
 
-The input signals come from 6 Knowles SPM1437HM4H-B microphones\footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20Acoustics\%20PDFs/SPM1437HM4H-B.pdf}} connected to the board via a cape designed especially for this project.\footnote{\url{https://github.com/fakufaku/kurodako}}
+The audio processing code currently handles six microphones at a fixed output sample rate, using one of the 2 PRUs present on the board. The input signals come from six Knowles SPM1437HM4H-B microphones\footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20Acoustics\%20PDFs/SPM1437HM4H-B.pdf}} connected to the board via a cape designed especially for this project.\footnote{\url{https://github.com/fakufaku/kurodako}}
 
 The SPM1437HM4H-B microphones used for this project produce a \emph{PDM} (Pulse Density Modulation) output. This is a 1-bit wide output at a very high sample rate ($ > $~1~MHz).\footnote{More information on PDM and its popularity for portable devices can be found here: \url{http://users.ece.utexas.edu/~bevans/courses/rtdsp/lectures/10_Data_Conversion/AP_Understanding_PDM_Digital_Audio.pdf}} Moreover, this signal needs to be converted to a lower-rate PCM (Pulse-Code Modulation) signal, which is much more commonly used for processing and storing audio data.
 
@@ -160,7 +169,7 @@ The SPM1437HM4H-B microphones used for this project produce a \emph{PDM} (Pulse 
 \caption{Illustration of a PDM signal (\url{https://commons.wikimedia.org/wiki/File:Pulse-density_modulation_1_period.gif})}
 \end{figure}
 
-In a PCM signal, each value represents its amplitude on a fixed scale at a fixed time. However, in a PDM signal, its amplitude at a given time is represented by the density of 1's relative to 0's at a given time. Converting a PDM signal to a PCM signal therefore requires using some form of a moving-average filter.
+In a PCM signal, each value represents its amplitude on a fixed scale at a fixed time. However, in a PDM signal, its amplitude at a given time is represented by the density of 1's relative to 0's in a time interval. Converting a PDM signal to a PCM signal therefore requires using some form of a moving-average filter.
 
 \hypertarget{cic-filter}{%
 \subsection{CIC Filter}\label{cic-filter}}
@@ -173,24 +182,19 @@ Although cheap to compute, the CIC filter does have an unfortunate drawback. Its
 
 In general, CIC filters are well suited as an efficient first filtering step, which efficiently downsamples the signal and gets rid of some of the higher frequencies. The reduced sample rate of the output reduces the computational power needed for additional FIR compensation filters, and therefore compensates their higher complexity.
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{Pictures/CIC_power_resp.png}
-\caption{Example power response of the filter (own work).}
+\caption{Power response of the CIC filter for a particular set of parameters (own work, generated from our script (\texttt{utils/power\_resp\_CIC\_folds.py} in the project files). The green line for the \emph{cutoff frequency} is the upper limit of the frequencies we are interested in (8 kHz to capture human speech reasonably well). The frequencies between the red lines will be aliased into our frequency range of interest. By looking at the intersection between the first dip of the frequency response and the aliasing bands, we can estimate the minimum aliasing attenuation achieved by a particular set of parameters. Refer to Table II in Hogenauer's paper for the aliasing attenuation that can be achieved for a variety of parameters.}
+\label{fig:frequency-response}
 \end{figure}
 
 Now let's dive into more detail about the CIC filter. The filter has 3 parameters : N, M, and R. It is made of N cascaded integrator stages, followed by a decimator of rate R, and then N cascaded comb stages, where M is the delay of the samples in the comb stages. It takes a PDM signal as input and outputs a PCM signal. If the input sample rate is \texttt{f\_s}, the output sample rate will be \texttt{f\_s / R}. A CIC interpolation filter is very similar, except the comb stages come first, followed by an interpolator of rate R, and finally the integrators.
 
 \begin{figure}[H]
-	\centering
-	\includegraphics[width=1.0\linewidth]{Pictures/CIC_power_resp.png}
-	\caption{Example power response of the CIC filter.}
-\end{figure}
-
-\begin{figure}[H]
 \centering
-\includegraphics[width=0.9\linewidth]{Pictures/CIC_structure.png}
-\caption{Structure of a CIC decimation filter, obtained from Hogenhauer's paper about CIC filters.}
+\includegraphics[width=0.8\linewidth]{Pictures/CIC_structure.png}
+\caption{Structure of a CIC decimation filter, obtained from Hogenauer's paper about CIC filters.}
 \end{figure}
 
 The filter's resource usage depends on its parameters, the platform on which it is implemented and how it is implemented. A more detailed explanation will follow in the implementation section of this report - Section~\ref{implementation}. However, by considering only the theoretical structure of the filter, we can already deduce some general rules :
@@ -203,7 +207,7 @@ The filter's resource usage depends on its parameters, the platform on which it 
   Computational resource usage is inversely correlated to R : Since the comb stages are preceded by a decimator of rate R, the comb stages need to be updated R times less often than the integrator stages. Therefore, as R increases, the total computational power is reduced since the comb stages are not used as often. However, the reduction cannot be arbitrarily high, because the integrator stages always need to be updated at the very high input sample rate, independently of R. The processing power needed for these stages, and any other overhead added by the implementation, constitute therefore a lower-bound of the total processing power required to run the filter.
 \end{itemize}
 
-Finally, it is important to note that overflows will occur in the integrator stages. However, the output of the filter will still be correct if each stage follows modular arithmetic rules\footnote{PRU registers follow modular arithmetic since they can overflow and loop back to zero. The same can be done if using the most-significant 16 bits and the least-significant 16 bits of a single PRU register as separate ``registers''.} and if each stage has a bit width large enough that it can support the maximum possible value at the output of the filter. To ensure the second condition is met, the following formula is used to calculate the required bit width for each stage of the filter (described in Hogenhauer's paper) :
+Finally, it is important to note that overflows will occur in the integrator stages. However, the output of the filter will still be correct if each stage follows modular arithmetic rules\footnote{PRU registers follow modular arithmetic since they can overflow and loop back to zero. The same can be done if using the most-significant 16 bits and the least-significant 16 bits of a single PRU register as separate ``registers''.} and if each stage has a bit width large enough that it can support the maximum possible value at the output of the filter. To ensure the second condition is met, the following formula is used to calculate the required bit width for each stage of the filter (described in Hogenauer's paper) :
 
 \begin{equation}
 \label{eq:bout}
@@ -457,7 +461,14 @@ The core audio processing code, which implements the CIC filter, runs on the PRU
   Interrupting the host when data is ready to be retrieved by the host from its buffer.
 \end{itemize}
 
-It is written exclusively in PRU assembly (\texttt{src/6Mic-CIC/pru1.asm} in the project files). The chosen CIC filter parameters are \texttt{N~=~4}, \texttt{M = 1} and \texttt{R = 16}.
+It is written exclusively in PRU assembly (\texttt{src/6Mic-CIC/pru1.asm} in the project files). The chosen CIC filter parameters are \texttt{N~=~4}, \texttt{M = 1} and \texttt{R = 16}. We chose these parameters for the following reasons~:
+
+\begin{itemize}
+  \tightlist
+  \item Register usage, see section~\ref{usage-of-resources-depending-on-the-cic-filter-parameters-n-m-r-and-on-the-number-of-channels-c}
+  \item Timing constraints, see section~\ref{usage-of-resources-depending-on-the-cic-filter-parameters-n-m-r-and-on-the-number-of-channels-c}
+  \item Decent frequency response and aliasing attenuation, see Figure~\ref{fig:frequency-response}.
+\end{itemize}
 
 For performance reasons, the PRU uses registers to store the data of each stage of the filter. Because the PRU only has 30 available registers for storing data, it needs to use registers from the scratchpads as well. It does so by exchanging some of its registers with the scratchpads using the \texttt{XIN} and \texttt{XOUT} instructions. We have to keep track of several different counters along the way, and also do the correct register exchanges with the scratchpads to keep any data from being overwritten. We need one counter to implement the decimator, one for the \texttt{t\_dv} delay and one to keep track of how many samples have been written to the host's memory. This last counter is referred to as \emph{bytes counter} and is needed so an interrupt can be triggered when the expected amount of data is ready. The processing is done in several steps :
 
@@ -735,14 +746,13 @@ It follows the same basic principles as the 6-channels implementation, without s
 This implementation works and allowed us to have an idea of how the output of a channel sounds like with different parameters. The PCM signal can be converted to a WAV file using the \texttt{PCMtoWAV.py} script in \texttt{wav\_conv/}.
 
 \hypertarget{host-interface-and-api}{%
-\section{Host interface and API}\label{host-interface-and-api}}
+\section{C interface (API)}\label{host-interface-and-api}}
 
 The host interface is written in C in the \texttt{interface.h} and
 \texttt{interface.c} files. It is currently very simple and provides the
 following functions :
 
 \lstinputlisting{../src/6Mic-CIC/host/interface.h}
-
 
 The host interface contains several components. The first is a special buffer in the host memory allocated by \texttt{prussdrv} which the PRU directly writes to. It contains the data computed by the PRU for all channels. The second component is a larger circular buffer which serves as the main temporary buffer of the interface.
 
@@ -754,7 +764,7 @@ The circular buffer is similar to a queue but with a fixed length. Its API provi
 
 The \texttt{pcm\_read} function provided by the API pops the number of samples required by the user from the circular buffer, then extracts only the number of channels the user asks for, and finally outputs this data to the user provided buffer.
 
-It is important to note that there will be concurrent accesses to the circular buffer : data pushed by the recording thread, and data popped by the user thread calling the \texttt{pcm\_read} function. Our implementation handles this by making accesses mutually exclusive by using a mutex declared in the \texttt{interface.c} file. This is a simple but far from the ideal solution. For example, if a call to \texttt{pcm\_read} pops a large chunk of data from the circular buffer, this may block the recording for a long enough time that it will miss the next interrupt, and therefore a large chunk of samples.
+It is important to note that there will be concurrent accesses to the circular buffer : data pushed by the recording thread, and data popped by the user thread calling the \texttt{pcm\_read} function. Our implementation handles this by making accesses mutually exclusive by using a mutex declared in the \texttt{interface.c} file. This is a simple but not ideal solution. For example, if a call to \texttt{pcm\_read} pops a large chunk of data from the circular buffer, this may block the recording for a long enough time that it will miss the next interrupt, and therefore a large chunk of samples.
 
 \hypertarget{results}{%
 \chapter{Results}\label{results}}
@@ -768,7 +778,7 @@ The single channel implementation works and shows that it is possible to impleme
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{Pictures/spectrogram.png}
-\caption{Spectrogram of the signal of one of the channels from the demo recording made during the project's presentation (own work).}
+\caption{Spectrogram of the signal of one of the channels from the demo recording made during the project's presentation (own work, generated using Audacity). As we are interested in human speech, we can attenuate the noise above 8 kHz with a simple low-pass filter. Moreover, a compensation filter can be used to properly shape the response below 8 kHz.}
 \end{figure}
 
 It is worth noting that using one channel, the timing constraints are much less tight since there is much less processing to be done. This leaves more freedom in choosing the parameters. For example, higher input sample rates (compared to the 6-channel 1.028 MHz) are achievable.
@@ -797,7 +807,7 @@ drivers}\label{lack-of-documentation-and-the-existence-of-2-different-drivers}}
 
 The biggest challenge faced in this project is probably the lack of clear and organized documentation about how to run code on the PRU from the Linux host, how to configure the operating system so that the BeagleBone's pins can be multiplexed to the PRU, how to choose which driver to use, and finally how to configure the BeagleBone for it to work. Most of the documentation and examples are scarce, sometimes outdated and scattered across multiple websites which forced us to do a lot of trial and errors on things such as how to enable drivers or the right interrupts between the host and the PRU.
 
-Apart from the fact that embedded systems is an inherently tough subject that is by far not as popular as higher level programming,\footnote{in particular the PRU, which seems to be a piece of hardware very few people use or know about.} I think the scarcity of the documentation is probably the greatest factor that makes the learning curve for this project rather steep.
+Apart from the fact that embedded systems is an inherently tough subject that is by far not as popular as higher level programming,\footnote{in particular the PRU, which seems to be a piece of hardware very few people use or know about.} I think the scarcity of the documentation is probably the greatest factor that made the learning curve for this project rather steep.
 
 \hypertarget{limited-number-of-registers-and-tight-timings}{%
 \section{Limited number of registers and tight
@@ -832,8 +842,9 @@ It could for example be possible to implement a CIC on both PRUs which would all
 handle more
 channels}\label{tweak-the-parameters-to-get-smaller-bit-width-and-possibly-handle-more-channels}}
 
-The parameters we are currently using for the CIC filter (R = 16, N = 4, M = 1) give a decent frequency response (at least judging by our ear) but require 17 bits per stage of the filter. Tweaking the parameters to achieve 16 bits or less would allow fitting 2 channels in one register which would dramatically reduce the usage of memory resources, both on the PRU and on the host.
+The parameters we are currently using for the CIC filter (R = 16, N = 4, M = 1) give a decent frequency response (as seen in Figure~\ref{fig:frequency-response}) but require 17 bits per stage of the filter. Tweaking the parameters to achieve 16 bits or less would allow fitting 2 channels in one register which would dramatically reduce the usage of memory resources, both on the PRU and on the host. For example, one could use N = 3, which would require only 13 bits per stage of the filter. This would allow fitting 2 channels per register in the filter, perhaps making an 8-channels implementation possible.
 
+We provide a script\footnote{\texttt{utils/power\_resp\_CIC\_folds.py} in the project files.} for checking the frequency response and required bit width per stage, given different parameters.
 
 \hypertarget{use-of-a-lookup-table}{%
 \section{Use of a lookup table}\label{use-of-a-lookup-table}}
@@ -846,7 +857,7 @@ interface}\label{better-and-more-modular-interface}}
 
 For now the interface is very limited, and depending on how many channels the user chooses to read, the whole program can also be very wasteful on resources. This is because with the current implementation, the PRU always processes the six channels, and the host interface's backend always records all six channels, even if in the end the user requests fewer channels. In the event the user wants to read fewer channels, the interface's front-end will just drop the data from the channels the user does not want, before sending the data to the user.
 
-An improvement could be to let the user choose how many channels he intends to use at most, and then only handle this number of channels instead of the maximum possible. However, making the CIC filter's code modular might not be a feasible task given the high performance requirements, at least with the current model of our implementation. A workaround would be to write several programs, possibly one for each number of channels, and load the appropriate one on the PRU by letting the user choose the number of channels when calling the \texttt{pru\_processing\_init} function is called.
+An improvement could be to let the user choose how many channels he intends to use at most, and then only handle this number of channels instead of the maximum possible. However, making the CIC filter's code modular might not be a feasible task given the high performance requirements, at least with the current model of our implementation. A workaround would be to write several programs, possibly one for each number of channels, and load the appropriate one on the PRU by letting the user choose the number of channels when calling the \texttt{pru\_processing\_init} function is called. Usinf fewer channels would allow us to implement a CIC filter with a better frequency response.
 
 As explained earlier, the current implementation of the interface uses a very simple circular buffer we implemented ourselves, and concurrent accesses are managed using a mutex. This is probably a quite inefficient and unoptimized solution that could lead the interface back-end to miss the recovery of some of the samples from the PRU, if the \texttt{pcm\_read} function is asked to retrieve a huge chunk of data.
 
