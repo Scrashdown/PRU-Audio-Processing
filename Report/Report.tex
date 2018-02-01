@@ -390,11 +390,7 @@ The DATA pin of the microphone is then connected to a pin of the board which is 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.6\linewidth]{Pictures/wiring.png}
-<<<<<<< HEAD
 \caption{Wiring of one microphone to the board (own work).}
-=======
-\caption{Wiring of one microphone to the board.}
->>>>>>> f531a903f5ed5d8e7afd11aaa5ccb8cfdf3c46a5
 \end{figure}
 
 Since we are using 6 microphones, we could use 6 pins on the board for the microphone's DATA outputs, however it is possible to connect 2 microphones to a single board pin, thus tying two DATA lines together. To achieve this, we set one of the SELECT lines of the microphones to VDD and the other to GND. By doing this, one of the microphones will have data ready just after the rising edge of the input clock, while the other one will have data ready just after the falling edge. In order to avoid a short circuit between the 2 microphones connected to the same pin, it is necessary to place a resistor between one of the microphones (for example, between all rising edge microphones) and the BeagleBone Black pin. This method has the advantage of using 3 pins on the BBB instead of 6.
