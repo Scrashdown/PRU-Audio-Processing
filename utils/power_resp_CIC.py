@@ -44,12 +44,12 @@ if __name__ == "__main__":
     fc = freqs_hz[np.argmin(abs(P_db+3))]  # -3dB point
 
     # visualize
-    plt.ion()
+    # plt.ion()
     plt.figure()
     plt.plot(freqs_hz, P_db,'b-')
     plt.axvline(x=fc, color='r', linestyle='--')
     plt.axvline(x=8000, color='g', linestyle='--')
-    # plt.plot(freqs_hz, P_est_db)   # P_db essentially same as P_dB_est
+    plt.plot(freqs_hz, P_est_db)   # P_db essentially same as P_dB_est
 
     # add plot of f_c line
 
@@ -60,4 +60,4 @@ if __name__ == "__main__":
     plt.ylabel('Attenuation [dB]', fontsize=20)
     plt.ylim([-40,0])
     plt.legend(['P', 'Cutoff', '8kHz'], fontsize=20)
-    plt.show()
+    plt.show(block=True)
