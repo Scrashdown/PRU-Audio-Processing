@@ -103,7 +103,14 @@
 \hypertarget{introduction-motivation}{%
 \chapter{Introduction / Motivation}\label{introduction-motivation}}
 
-The goal of this project is to implement audio processing using one of the BeagleBone Black's PRU microprocessors along with a C API built around it to allow convenient access through a simple C~library. The input signals come from 6 Knowles SPM1437HM4H-B microphones\footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20Acoustics\%20PDFs/SPM1437HM4H-B.pdf}} connected to the board via a cape designed especially for this project.\footnote{\url{https://github.com/fakufaku/kurodako}}
+Microphone arrays have become increasingly popular due to popular devices such as Amazon Echo, Google Home, etc. These devices make use of microphone arrays to perform algorithms such as beamforming and direction-of-arrival. The LCAV lab at EPFL has already developed such algorithms\footnote{LCAV algorithms repository : \url{https://github.com/LCAV/pyroomacoustics}} and a browser-based interface for audio processing with an embedded platform \footnote{\urlhttps://github.com/LCAV/easy-dsp{}} - the BeagleBone Black. The goal of this project is to implement such a microphone array on the BeagleBone Black, taking advantage of a unique microcontroller available on the BeagleBone Black device - the Programmable Real-time Unit SubSystem (PRUSS).
+
+The project is made of 3 main components :
+
+\begin{itemize}
+  \tightlist
+  \item The hardware : the microphone array itself, made of the BeagleBone Black and the Kurodako cape\footnote{\url{}}
+\end{itemize}
 
 The audio processing code currently handles the six microphones at a fixed output sample rate, using one of the 2 PRUs present on the board. For now, the API is very simple. It allows the user to read the processed data from the PRU to a user-supplied buffer, specify the quantity of data needed and the number of channels to extract from it. It also allows the user to pause and resume the recording of the data on the API side in order to prevent overflows in case the user wants to momentarily stop reading data.
 
@@ -136,6 +143,8 @@ That said, it seems \texttt{uio\_pruss} is currently being phased out of support
 
 \hypertarget{audio-processing}{%
 \section{Audio Processing}\label{audio-processing}}
+
+The input signals come from 6 Knowles SPM1437HM4H-B microphones\footnote{\url{https://media.digikey.com/pdf/Data\%20Sheets/Knowles\%20Acoustics\%20PDFs/SPM1437HM4H-B.pdf}} connected to the board via a cape designed especially for this project.\footnote{\url{https://github.com/fakufaku/kurodako}}
 
 The SPM1437HM4H-B microphones used for this project produce a \emph{PDM} (Pulse Density Modulation) output. This is a 1-bit wide output at a very high sample rate ($ > $~1~MHz).\footnote{More information on PDM and its popularity for portable devices can be found here: \url{http://users.ece.utexas.edu/~bevans/courses/rtdsp/lectures/10_Data_Conversion/AP_Understanding_PDM_Digital_Audio.pdf}} Moreover, this signal needs to be converted to a lower-rate PCM (Pulse-Code Modulation) signal, which is much more commonly used for processing and storing audio data.
 
