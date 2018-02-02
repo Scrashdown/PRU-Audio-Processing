@@ -90,6 +90,9 @@
 		{\LARGE Bachelor Semester Project - Fall 2017} \\
 		\vskip2cm
 		{\Large Loïc Droz}\\
+		\vskip2cm
+		{\normalsize Laboratory : Audiovisual Communications}\\
+		{\normalsize Supervisors : Eric Bezzam, Robin Scheibler}
 	}    
 	\vfill
 	\vskip5cm
@@ -640,13 +643,13 @@ filter parameters and on the number of channels}{Usage of resources depending on
 
 In the current design, we use only registers to store all values involved in the CIC filter computation. Each PRU has 32 registers \texttt{(r0-r31)}, but in practice only 30 are usable. This is because \texttt{r30} and \texttt{r31} are reserved for interacting with BBB GPIO pins and triggering interrupts.
 
-Furthermore, since we use the PRU's 3 additional register banks, we cannot use all the bits of \texttt{r0}, because the value of the first byte of \texttt{r0} is used as an offset value for register exchanges with the banks.
+Furthermore, since we use the PRU's three additional register banks, we cannot use all the bits of \texttt{r0}, because the value of the first byte of \texttt{r0} is used as an offset value for register exchanges with the banks.
 
 Another thing we need to take into account is that, apart from channel private data (values involved in the CIC filter computations for each channel), we also need to keep track of some channel \textit{independent} data : a byte counter to keep track of the number of bytes written in the host buffer, a sample counter to implement decimation, the host buffer's size and address and temporary values used for delaying and processing input. This data has to stay on the PRU at all times.
 
-We can fit the decimation counter in a single byte, as long as it does not exceed 255. However, the byte counter needs a complete register. The host's buffer size and address also each need one complete register. Finally, we can use one half register to store a temporary counter for implementing delays and also extracting single bits from the r31 register (input pins).
+We can fit the decimation counter in a single byte, as long as it does not exceed 255. However, the byte counter needs a complete register. The host's buffer size and address also each need one complete register. Finally, we can use one half register to store a temporary counter for implementing delays and also extracting single bits from the \texttt{r31} register (input pins).
 
-Also, in our implementation, even though we have 6 channels, we only have 3 output registers. After filling the 3 registers, their contents are written to the host buffer and they can be used to store new inputs.
+Also, in our implementation, even though we have six channels, we only have three output registers. After filling the three registers, their contents are written to the host buffer and they can be used to store new inputs.
 
 We store all this information on PRU1 in the following way :
 
@@ -782,15 +785,15 @@ program}\label{channel-proof-of-concept-program}}
 
 Before writing the 6-channels CIC filter and the C host interface, we wrote a simple, 1-channel, proof of concept program implementing a CIC filter. We then used this code as a base and adapted it for the 6-channels implementation. It can be found in \texttt{src/1Mic-CIC/cic\textunderscore pru1.asm} and run with \texttt{sh deploy.sh}. This will start recording from a microphone connected to P8.28 on the BeagleBone and then output the raw resulting PCM to a file in the \texttt{src/1Mic-CIC/output/} directory.
 
-It follows the same basic principles as the 6-channels implementation, without scratchpad register exchanges, and waiting for only 1 channel instead of 6.
+It follows the same basic principles as the 6-channels implementation, without scratchpad register exchanges, and waiting for only one channel instead of six.
 
-This implementation works and allowed us to have an idea of how the output of a channel sounds like with different parameters. The PCM signal can be converted to a WAV file using the \texttt{PCMtoWAV.py} script in \texttt{wav\_conv/}.
+This implementation works and allowed us to have an idea of how the output of a channel sounds with different parameters. The PCM signal can be converted to a WAV file using the \texttt{PCMtoWAV.py} script in \texttt{src/1Mic-CIC/wav\_conv/}.
 
 \hypertarget{host-interface-and-api}{%
 \section{C interface (API)}\label{host-interface-and-api}}
 
 The host interface is written in C in the \texttt{interface.h} and
-\texttt{interface.c} files. It is currently very simple and provides the
+\texttt{interface.c} files in \texttt{src/6Mic-CIC/host}. It is currently very simple and provides the
 following functions :
 
 \lstinputlisting{../src/6Mic-CIC/host/interface.h}
@@ -799,7 +802,7 @@ The host interface contains several components. The first is a special buffer in
 
 When the \texttt{pru\_processing\_init()} function of the API is called, it loads and starts the PRU firmware and starts a separate thread which handles the recording of the samples from the PRU buffer to the bigger circular buffer of the interface. Everytime the PRU has finished writing one half of this buffer, it sends an interrupt to the host and starts writing to the other half. The code of the sent interrupt designates which half of the buffer was filled with fresh data.
 
-This thread essentially waits alternatively for each interruption and then copies the corresponding buffer half to the circular buffer. Waiting for each interrupt alternatively makes sure the host cannot get desynchronized and start writing the buffer halves that are being overwritten by the PRU. However, this mechanism cannot detect whether a buffer half has been skipped. This can happen if the host is too busy with other programs which can make it miss an interrupt by the PRU. Furthermore, if an interrupt is missed, the next one will be skipped as well, since we wait for them alternatively. Therefore if an interrupt is missed, 2 buffer halves will actually be missed. We chose to use this mechanism because of its simplicity, and because it did not require the PRU to count the buffer halves it filled and output the number to the host regularly. This would however be a better solution.
+This thread essentially waits alternatively for each interruption and then copies the corresponding buffer half to the circular buffer. Waiting for each interrupt alternatively makes sure the host cannot get desynchronized and start writing the buffer halves that are being overwritten by the PRU. However, this mechanism cannot detect whether a buffer half has been skipped. This can happen if the host is too busy with other programs which can make it miss an interrupt by the PRU. Furthermore, if an interrupt is missed, the next one will be skipped as well, since we wait for them alternatively. Therefore if an interrupt is missed, two buffer halves will actually be missed. We chose to use this mechanism because of its simplicity, and because it did not require the PRU to count the buffer halves it filled and output the number to the host regularly. This would however be a better solution.
 
 The circular buffer is similar to a queue but with a fixed length. Its API provides functions for pushing and popping data from it. In the case of an overflow, the push function will only trigger a warning and overwrite the oldest data in the buffer.
 
@@ -827,7 +830,7 @@ It is worth noting that using one channel, the timing constraints are much less 
 \hypertarget{channels-implementation}{%
 \section{6-channels implementation}\label{channels-implementation}}
 
-At the time of writing this report, the 6-channels implementation works. The C interface has been tested recording samples for up to 5 minutes and appears to work.
+At the time of writing this report, the 6-channels implementation works. The C interface has been tested recording samples for up to five minutes and appears to work.
 
 We have noticed that some occasional glitches appeared in the signal while using a microphone connected using a breadboard and soldered by hand. However, these glitches seem to have disappeared when we started using the Kurodako Board.
 
@@ -846,7 +849,7 @@ More rigorous testing needs to be done to make sure the PRU processing code and 
 \section{Lack of documentation and the existence of two, different
 drivers}\label{lack-of-documentation-and-the-existence-of-2-different-drivers}}
 
-The biggest challenge faced in this project is probably the lack of clear and organized documentation about how to run code on the PRU from the Linux host, how to configure the operating system so that the BeagleBone's pins can be multiplexed to the PRU, how to choose which driver to use, and finally how to configure the BeagleBone for it to work. Most of the documentation and examples are scarce, sometimes outdated and scattered across multiple websites which forced us to do a lot of trial and errors on things such as how to enable drivers or the right interrupts between the host and the PRU.
+The biggest challenges faced in this project were probably the lack of clear and organized documentation about how to run code on the PRU from the Linux host, how to configure the operating system so that the BeagleBone's pins can be multiplexed to the PRU, how to choose which driver to use, and finally how to configure the BeagleBone for it to work. Most of the documentation and examples are scarce, sometimes outdated and scattered across multiple websites which forced us to do a lot of trial and errors on things such as how to enable drivers or the right interrupts between the host and the PRU.
 
 Apart from the fact that embedded systems is an inherently tough subject that is by far not as popular as higher level programming,\footnote{in particular the PRU, which seems to be a piece of hardware very few people use or know about.} I think the scarcity of the documentation is probably the greatest factor that made the learning curve for this project rather steep.
 
@@ -854,11 +857,11 @@ Apart from the fact that embedded systems is an inherently tough subject that is
 \section{Limited number of registers and tight
 timings}\label{limited-number-of-registers-and-tight-timings}}
 
-On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample from each channel must execute in less than 144 cycles. All except one of the PRU's registers are used, and the majority of the banks' registers are used as well.
+On a more technical point of view, processing six channels simultaneously on one PRU is feasible, but challenging in terms of resource management. In our current implementation of the 6-channels CIC filter on the PRU, all operations required for processing one sample (from each channel) must execute in less than 144 cycles. All except one of the PRU's registers are used, and the majority of the banks' registers are used as well.
 
-This `shortage' of registers on the PRU forced us to write each set of 6 samples in 2 steps of 3 registers and was the source of a bug : the bytes counter used by the PRU to keep track of where it is writing in the host buffer was updated incorrectly. We incremented it by 6 * 4 bytes once instead of incrementing it by 3 * 4 bytes twice, which discarded the first 3 channels by overwriting them with the last 3 ones.
+This `shortage' of registers on the PRU forced us to write each set of six samples in two steps of three registers and was the source of a bug : the bytes counter used by the PRU to keep track of where it is writing in the host buffer was updated incorrectly. We incremented it by 6 * 4 bytes once instead of incrementing it by 3 * 4 bytes twice, which discarded the first three channels by overwriting them with the last three ones.
 
-Another challenge was to design the program such that it would not rely on the host too much because of its unpredictable timings and busy nature. Below is an example of a bug that happened when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) spectrogram.
+Another challenge was to design the program such that it would not rely on the host too much because of the host's unpredictable timings and busy nature. Below is an example of a bug that happened when the host was in charge of retrieving a new sample everytime it was ready (with these parameters, 64'000 times per second). The host couldn't keep up and missed many samples, resulting in this quite weird looking (and sounding) spectrogram.
 
 \begin{figure}[H]
 \centering
@@ -876,14 +879,14 @@ features}\label{possible-improvements-and-additional-features}}
 
 Currently, we use only one PRU (PRU1) to handle the audio processing with the CIC filter. The design choice was made to make the implementation simpler. However, this also limited us to being only able to process six channels at a time instead of the initial goal of eight.
 
-It could for example be possible to implement a CIC on both PRUs which would allow us to handle more than 6 channels. Another idea would be to keep the CIC filter on one PRU, but move the compensation filter which is currently implemented on the host ARM CPU to the other PRU, offloading the ARM CPU even further and also reducing the latency.
+It could for example be possible to implement a CIC on both PRUs which would allow us to handle more than six channels. Another idea would be to keep the CIC filter on one PRU, but move the compensation filter which would be implemented on the host ARM CPU to the other PRU, offloading the ARM CPU even further and also reducing the latency.
 
 \hypertarget{tweak-the-parameters-to-get-smaller-bit-width-and-possibly-handle-more-channels}{%
 \section{Tweak the parameters to get smaller bit width and possibly
 handle more
 channels}\label{tweak-the-parameters-to-get-smaller-bit-width-and-possibly-handle-more-channels}}
 
-The parameters we are currently using for the CIC filter (R = 16, N = 4, M = 1) give a decent frequency response (as seen in Figure~\ref{fig:frequency-response}) but require 17 bits per stage of the filter. Tweaking the parameters to achieve 16 bits or less would allow fitting 2 channels in one register which would dramatically reduce the usage of memory resources, both on the PRU and on the host. For example, one could use N = 3, which would require only 13 bits per stage of the filter. This would allow fitting 2 channels per register in the filter, perhaps making an 8-channels implementation possible.
+The parameters we are currently using for the CIC filter (R = 16, N = 4, M = 1) give a decent frequency response (as seen in Figure~\ref{fig:frequency-response}) but require 17 bits per stage of the filter. Tweaking the parameters to achieve 16 bits or less would allow fitting 2 channels in one register which would dramatically reduce the usage of memory resources, both on the PRU and on the host. For example, one could use N = 3, which would require only 13 bits per stage of the filter. This would allow fitting two channels per register in the filter, perhaps making an 8-channels implementation possible with only one PRU.
 
 We provide a script\footnote{\texttt{utils/power\_resp\_CIC\_folds.py} in the project files.} for checking the frequency response and required bit width per stage, given different parameters.
 
@@ -898,11 +901,11 @@ interface}\label{better-and-more-modular-interface}}
 
 For now the interface is very limited, and depending on how many channels the user chooses to read, the whole program can also be very wasteful on resources. This is because with the current implementation, the PRU always processes the six channels, and the host interface's backend always records all six channels, even if in the end the user requests fewer channels. In the event the user wants to read fewer channels, the interface's front-end will just drop the data from the channels the user does not want, before sending the data to the user.
 
-An improvement could be to let the user choose how many channels he intends to use at most, and then only handle this number of channels instead of the maximum possible. However, making the CIC filter's code modular might not be a feasible task given the high performance requirements, at least with the current model of our implementation. A workaround would be to write several programs, possibly one for each number of channels, and load the appropriate one on the PRU by letting the user choose the number of channels when calling the \texttt{pru\_processing\_init} function is called. With fewer channels to process, a CIC filter with a better response (i.e. higher aliasing attenuation) can be achieved, with the available resources.
+An improvement could be to let the user choose how many channels they intend to use at most, and then only handle this number of channels instead of the maximum possible. However, making the CIC filter's code modular might not be a feasible task given the high performance requirements, at least with the current model of our implementation. A workaround would be to write several programs, possibly one for each number of channels, and load the appropriate one on the PRU (with the \texttt{deploy.sh} script) by letting the user choose the number of channels when calling the \texttt{pru\_processing\_init} function. With fewer channels to process, a CIC filter with a better response (i.e. higher aliasing attenuation) can be achieved, with the available resources.
 
 As explained earlier, the current implementation of the interface uses a very simple circular buffer we implemented ourselves, and concurrent accesses are managed using a mutex. This is probably a quite inefficient and unoptimized solution that could lead the interface back-end to miss the recovery of some of the samples from the PRU, if the \texttt{pcm\_read} function is asked to retrieve a huge chunk of data.
 
-A workaround to this would be to implement a 'smarter' concurrent circular buffer, or use of an existing one. One solution we considered but eventually did not have enough time to use was the \texttt{liblfds}\footnote{\url{https://liblfds.org/}} library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer).
+A workaround to this would be to implement a `smarter' concurrent circular buffer or use an existing one. One solution we considered but eventually did not have enough time to use was the \texttt{liblfds}\footnote{\url{https://liblfds.org/}} library, which contains an implementation of a thread-safe, concurrent cirular buffer (ringbuffer).
 
 Another idea would be to adapt the interface so that it could directly create a WAV file, and not a raw PCM file.
 
